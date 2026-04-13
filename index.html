@@ -762,24 +762,90 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
               <div id="drive-last-sync" style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--accent)">—</div>
             </div>
             <div style="background:var(--surface2);border-radius:8px;padding:14px;text-align:center">
-              <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Cambios pendientes</div>
-              <div id="drive-pending-count" style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;color:var(--gold)">0</div>
+              <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Local</div>
+              <div id="drive-local-count" style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;color:var(--accent)">—</div>
             </div>
             <div style="background:var(--surface2);border-radius:8px;padding:14px;text-align:center">
-              <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Productos en Drive</div>
+              <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">En Drive</div>
               <div id="drive-remote-count" style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600;color:var(--green)">—</div>
             </div>
           </div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap">
-            <button class="btn btn-primary" onclick="sincronizarAhora()" id="btn-sync-now" style="flex:1;justify-content:center;min-width:180px">
-              △ Sincronizar ahora
+
+          <!-- PRIMARY ACTIONS -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <!-- PULL from Drive -->
+            <button class="btn btn-success" onclick="cargarDesdeJsonDrive()" id="btn-pull" style="justify-content:center;padding:12px;flex-direction:column;gap:4px;height:auto">
+              <span style="font-size:18px">↓</span>
+              <span style="font-size:12px;font-weight:600">Cargar desde Drive</span>
+              <span style="font-size:10px;opacity:.8">Actualiza lista local con JSON de Drive</span>
             </button>
-            <button class="btn btn-outline" onclick="verificarConexion()" style="justify-content:center">
-              ◎ Verificar conexión
+            <!-- PUSH to Drive -->
+            <button class="btn btn-primary" onclick="sincronizarAhora()" id="btn-sync-now" style="justify-content:center;padding:12px;flex-direction:column;gap:4px;height:auto">
+              <span style="font-size:18px">↑</span>
+              <span style="font-size:12px;font-weight:600">Guardar en Drive</span>
+              <span style="font-size:10px;opacity:.8">Sube lista local al JSON de Drive</span>
             </button>
-            <button class="btn btn-outline" onclick="abrirDrive()" style="justify-content:center">
-              ⤤ Abrir Drive
-            </button>
+          </div>
+
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-outline btn-sm" onclick="verificarConexion()" style="justify-content:center">◎ Verificar conexión</button>
+            <button class="btn btn-outline btn-sm" onclick="abrirDrive()" style="justify-content:center">⤤ Abrir Drive</button>
+            <button class="btn btn-outline btn-sm" onclick="toggleAutoSync()" id="btn-autosync" style="justify-content:center">⟳ Auto-sync: OFF</button>
+          </div>
+
+          <!-- Diff indicator -->
+          <div id="drive-diff-banner" style="display:none;margin-top:12px;padding:10px 14px;border-radius:8px;font-size:12px;background:var(--yellow);color:var(--accent);display:none;align-items:center;gap:10px">
+            <span style="font-size:16px">⚠</span>
+            <div style="flex:1" id="drive-diff-text">Drive tiene productos diferentes a tu lista local.</div>
+            <button class="btn btn-success btn-sm" onclick="cargarDesdeJsonDrive()">↓ Cargar Drive</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MANUAL JSON UPLOAD -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Actualizar desde archivo JSON</span>
+          <span style="font-size:11px;color:var(--text3)">Sin conexión al script</span>
+        </div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+          <div style="font-size:13px;color:var(--text2)">
+            Si no tienes el Apps Script configurado, descarga el archivo JSON de Drive manualmente y súbelo aquí para actualizar la lista de materiales.
+          </div>
+          <!-- Step 1: Download from Drive -->
+          <div style="background:var(--surface2);border-radius:8px;padding:12px 14px">
+            <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Paso 1 — Descargar JSON de Drive</div>
+            <a href="https://drive.google.com/drive/folders/1Z7HuRjfjWXOgjwBX9GElgXHFnqV2B9pm" target="_blank" class="btn btn-outline btn-sm" style="text-decoration:none">⤤ Abrir carpeta Drive</a>
+            <div style="font-size:11px;color:var(--text3);margin-top:8px">Busca el archivo <code style="background:var(--border2);padding:1px 5px;border-radius:3px">TYC_Materiales_2026.json</code> → descárgalo</div>
+          </div>
+          <!-- Step 2: Upload -->
+          <div style="background:var(--surface2);border-radius:8px;padding:12px 14px">
+            <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Paso 2 — Cargar el archivo aquí</div>
+            <label style="display:flex;align-items:center;gap:10px;cursor:pointer;padding:12px 14px;border:2px dashed var(--border);border-radius:7px;background:var(--yellow)">
+              <span style="font-size:20px">📂</span>
+              <div style="flex:1">
+                <div style="font-size:13px;font-weight:500;color:var(--accent)">Seleccionar archivo JSON</div>
+                <div id="json-file-name" style="font-size:11px;color:var(--text3);margin-top:2px">Ningún archivo seleccionado</div>
+              </div>
+              <input type="file" id="json-file-input" accept=".json,application/json" style="display:none" onchange="previsualizarJSON(this)">
+            </label>
+          </div>
+          <!-- Preview -->
+          <div id="json-preview-box" style="display:none;background:var(--surface2);border-radius:8px;padding:12px 14px;border:1px solid var(--border2)">
+            <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Vista previa del archivo</div>
+            <div id="json-preview-content" style="font-size:12px;color:var(--text2)"></div>
+            <div style="display:flex;gap:10px;margin-top:12px">
+              <button class="btn btn-success" onclick="aplicarJsonManual()" style="flex:1;justify-content:center">✓ Aplicar — Actualizar lista de materiales</button>
+              <button class="btn btn-danger btn-sm" onclick="cancelarJsonManual()">✕ Cancelar</button>
+            </div>
+          </div>
+          <!-- Export current -->
+          <div style="border-top:1px solid var(--border2);padding-top:12px">
+            <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px">Exportar lista actual para compartir</div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-outline btn-sm" onclick="exportarListaJSON()" style="flex:1;justify-content:center">↓ Descargar JSON actual</button>
+              <button class="btn btn-outline btn-sm" onclick="exportarLista()" style="flex:1;justify-content:center">↓ Descargar CSV</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1994,6 +2060,116 @@ function attachInlineEdits(){
   });
 }
 
+// ─── PULL FROM DRIVE ─────────────────────────────────────────────────────────
+async function cargarDesdeJsonDrive(){
+  if(!driveConfig.url){ showNotif('Configura el URL del Apps Script primero','error'); switchPage('drive'); return; }
+  const btn = document.getElementById('btn-pull');
+  if(btn) btn.innerHTML='<span>⟳</span><span style="font-size:12px;font-weight:600">Cargando...</span>';
+  setDriveStatus('syncing','Cargando...');
+  addLog('Cargando lista desde Drive...','info');
+  try {
+    const res = await fetch(driveConfig.url+'?t='+Date.now());
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.msg||'Error');
+    if(!data.productos||!data.productos.length) throw new Error('JSON en Drive está vacío');
+    const oldCount = productos.length;
+    productos = data.productos.map((p,i)=>({...p,n:i+1}));
+    lastRemoteCount = productos.length;
+    document.getElementById('drive-remote-count').textContent = productos.length;
+    document.getElementById('drive-local-count').textContent = productos.length;
+    document.getElementById('drive-last-sync').textContent = new Date().toLocaleTimeString('es-PE');
+    setDriveStatus('ok','Actualizado ↓');
+    addLog(`Lista actualizada: ${productos.length} productos cargados (antes: ${oldCount})`,'ok');
+    showNotif(`Lista actualizada — ${productos.length} productos cargados desde Drive`);
+    updateDashboard();
+    if(document.getElementById('page-materiales').classList.contains('active')) renderMateriales();
+  } catch(e){
+    setDriveStatus('error','Error al cargar');
+    addLog('Error: '+e.message,'err');
+    showNotif('Error al cargar desde Drive: '+e.message,'error');
+  }
+  if(btn) btn.innerHTML='<span style="font-size:18px">↓</span><span style="font-size:12px;font-weight:600">Cargar desde Drive</span><span style="font-size:10px;opacity:.8">Actualiza lista local con JSON de Drive</span>';
+}
+
+// ─── MANUAL JSON UPLOAD ───────────────────────────────────────────────────────
+let jsonManualData = null;
+
+function previsualizarJSON(input){
+  const file = input.files[0];
+  if(!file) return;
+  document.getElementById('json-file-name').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try {
+      const raw = JSON.parse(e.target.result);
+      const arr = Array.isArray(raw)?raw:(raw.productos||null);
+      if(!arr||!arr.length) throw new Error('No contiene productos válidos');
+      jsonManualData = arr;
+      const catMap = {};
+      arr.forEach(p=>{catMap[p.cat||'Sin cat']=(catMap[p.cat||'Sin cat']||0)+1;});
+      const catRows = Object.entries(catMap).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<span style="display:inline-flex;gap:4px;margin:2px;padding:2px 8px;background:var(--surface);border-radius:10px;border:1px solid var(--border2);font-size:11px">${c}: <b>${n}</b></span>`).join('');
+      document.getElementById('json-preview-content').innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+          <div style="background:var(--green-light);color:var(--green);padding:5px 12px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600">${arr.length}</div>
+          <div style="font-size:13px;color:var(--text2)">productos en <b>${file.name}</b></div>
+        </div>
+        <div style="margin-bottom:6px;font-size:12px;color:var(--text2)">Categorías:</div>
+        <div style="margin-bottom:8px">${catRows}</div>
+        <div style="font-size:12px;color:var(--text2)">Primeros: ${arr.slice(0,3).map(p=>`<b>${p.name}</b>`).join(', ')}${arr.length>3?'…':''}</div>
+        <div style="margin-top:8px;font-size:11px;color:var(--text3)">⚠ Reemplazará los ${productos.length} productos actuales con los ${arr.length} del archivo.</div>`;
+      document.getElementById('json-preview-box').style.display = 'block';
+      showNotif(`Archivo leído: ${arr.length} productos encontrados`);
+    } catch(err){
+      showNotif('Error al leer JSON: '+err.message,'error');
+      jsonManualData = null;
+      document.getElementById('json-preview-box').style.display = 'none';
+    }
+  };
+  reader.readAsText(file);
+}
+
+function aplicarJsonManual(){
+  if(!jsonManualData||!jsonManualData.length){showNotif('No hay datos para aplicar','error');return;}
+  const oldCount = productos.length;
+  if(!confirm(`¿Reemplazar los ${oldCount} productos actuales con los ${jsonManualData.length} del archivo JSON?`)) return;
+  productos = jsonManualData.map((p,i)=>({...p,n:i+1}));
+  document.getElementById('drive-local-count').textContent = productos.length;
+  document.getElementById('drive-last-sync').textContent = new Date().toLocaleTimeString('es-PE')+' (manual)';
+  addLog(`JSON manual: ${productos.length} productos cargados (antes: ${oldCount})`,'ok');
+  showNotif(`Lista actualizada — ${productos.length} productos cargados`);
+  updateDashboard();
+  if(document.getElementById('page-materiales').classList.contains('active')) renderMateriales();
+  cancelarJsonManual();
+}
+
+function cancelarJsonManual(){
+  jsonManualData = null;
+  document.getElementById('json-preview-box').style.display = 'none';
+  document.getElementById('json-file-name').textContent = 'Ningún archivo seleccionado';
+  document.getElementById('json-file-input').value = '';
+}
+
+// ─── AUTO-SYNC TOGGLE ─────────────────────────────────────────────────────────
+let autoSyncEnabled = false;
+
+function toggleAutoSync(){
+  autoSyncEnabled = !autoSyncEnabled;
+  const btn = document.getElementById('btn-autosync');
+  if(autoSyncEnabled){
+    btn.textContent='⟳ Auto-sync: ON';
+    btn.style.cssText='background:var(--green);color:#fff;border:none';
+    iniciarAutoSync();
+    showNotif('Auto-sync activado — verifica Drive cada 60 segundos');
+    addLog('Auto-sync activado','ok');
+  } else {
+    btn.textContent='⟳ Auto-sync: OFF';
+    btn.style.cssText='';
+    if(autoSyncInterval){clearInterval(autoSyncInterval);autoSyncInterval=null;}
+    showNotif('Auto-sync desactivado');
+    addLog('Auto-sync desactivado','warn');
+  }
+}
+
 // ─── GOOGLE DRIVE SYNC ──────────────────────────────────────────────────────
 const DRIVE_FOLDER_URL = 'https://drive.google.com/drive/folders/1Z7HuRjfjWXOgjwBX9GElgXHFnqV2B9pm';
 let driveConfig = {url: '', folderId: '1Z7HuRjfjWXOgjwBX9GElgXHFnqV2B9pm'};
@@ -2449,36 +2625,34 @@ function iniciarAutoSync(){
   if(autoSyncInterval) clearInterval(autoSyncInterval);
   if(!driveConfig.url) return;
   autoSyncInterval = setInterval(async()=>{
-    if(!driveConfig.url || !driveConnected) return;
+    if(!driveConfig.url || !autoSyncEnabled) return;
     try {
       const res = await fetch(driveConfig.url+'?t='+Date.now());
       const data = await res.json();
-      if(!data.ok || !data.productos) return;
-      const remoteCount = data.count||data.productos.length;
-      // If remote has more/different products → update local
+      if(!data.ok || !data.productos || !data.productos.length) return;
+      const remoteCount = data.count || data.productos.length;
       if(lastRemoteCount !== null && remoteCount !== lastRemoteCount){
-        const remoteProd = data.productos;
-        // Merge: keep local edits, add remote new ones
-        remoteProd.forEach(rp=>{
-          const localIdx = productos.findIndex(p=>p.n===rp.n);
-          if(localIdx<0) productos.push(rp); // new product added by teammate
-          // Don't overwrite local edits unless remote is explicitly newer
-        });
-        productos.sort((a,b)=>a.n-b.n);
-        // Show banner
+        const oldCount = productos.length;
+        // Full replace with remote list
+        productos = data.productos.map((p,i)=>({...p,n:i+1}));
+        lastRemoteCount = remoteCount;
+        document.getElementById('drive-remote-count').textContent = remoteCount;
+        document.getElementById('drive-local-count').textContent = remoteCount;
+        document.getElementById('drive-last-sync').textContent = new Date().toLocaleTimeString('es-PE');
         const banner = document.getElementById('sync-banner');
         document.getElementById('sync-banner-count').textContent = remoteCount+' productos';
         banner.classList.add('show');
-        setTimeout(()=>banner.classList.remove('show'), 8000);
+        setTimeout(()=>banner.classList.remove('show'),10000);
         updateDashboard();
         if(document.getElementById('page-materiales').classList.contains('active')) renderMateriales();
-        addLog(`Auto-sync: ${remoteCount} productos recibidos desde Drive`,'ok');
-        document.getElementById('drive-last-sync').textContent = new Date().toLocaleTimeString('es-PE');
+        addLog(`Auto-sync: ${remoteCount} productos actualizados (antes: ${oldCount})`,'ok');
+      } else if(lastRemoteCount===null){
+        lastRemoteCount = remoteCount;
+        document.getElementById('drive-remote-count').textContent = remoteCount;
+        document.getElementById('drive-local-count').textContent = productos.length;
       }
-      lastRemoteCount = remoteCount;
-      document.getElementById('drive-remote-count').textContent = remoteCount;
-    } catch(e){ /* silent fail on auto-sync */ }
-  }, 60000); // every 60 seconds
+    } catch(e){ /* silent */ }
+  }, 60000);
 }
 
 // Auto-generate N° cotización when field is empty on focus
@@ -2499,6 +2673,9 @@ loadHistorico();
 updateDashboard();
 renderMateriales();
 setupCotNum();
+// Set local count display
+const lc = document.getElementById('drive-local-count');
+if(lc) lc.textContent = productos.length;
 // Start auto-sync after drive config loaded
 setTimeout(()=>{ if(driveConfig.url && driveConnected) iniciarAutoSync(); }, 3000);
 </script>
