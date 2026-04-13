@@ -194,7 +194,23 @@ table.print-table td.r{text-align:right;font-family:'IBM Plex Mono',monospace}
 @keyframes flashRow{0%{background:transparent}20%{background:#FFF8CC}80%{background:#FFF8CC}100%{background:transparent}}
 textarea.form-control{padding:10px 14px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:13px;outline:none;transition:border-color .15s;color:var(--text)}
 textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(46,87,153,0.1)}
-/* Drive sync */
+/* Historial cotizaciones */
+.hist-card{background:var(--surface);border:1px solid var(--border2);border-radius:9px;padding:16px 20px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;transition:box-shadow .15s}
+.hist-card:hover{box-shadow:0 4px 16px rgba(0,0,0,0.1)}
+.hist-num{font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:var(--accent)}
+.hist-cliente{font-size:13px;font-weight:500;color:var(--text);margin-top:2px}
+.hist-meta{font-size:11px;color:var(--text3);margin-top:4px}
+.hist-total{font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:var(--green);text-align:right}
+.hist-fecha{font-size:11px;color:var(--text3);text-align:right;margin-top:2px}
+.hist-actions{display:flex;gap:6px;margin-top:8px;grid-column:1/-1}
+.badge-estado{display:inline-block;padding:2px 9px;border-radius:10px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.estado-guardada{background:var(--green-light);color:var(--green)}
+.estado-enviada{background:var(--blue-light);color:var(--accent)}
+.estado-aprobada{background:#E2EFDA;color:#375623}
+.estado-rechazada{background:var(--red-light);color:var(--red)}
+/* Auto-sync banner */
+.sync-banner{display:none;background:var(--accent2);color:#fff;padding:8px 20px;font-size:12px;text-align:center;position:sticky;top:58px;z-index:90}
+.sync-banner.show{display:block}
 .sync-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:4px 10px;border-radius:20px}
 .sync-status.ok{background:#E2EFDA;color:#375623}
 .sync-status.pending{background:#FFF2CC;color:#854F0B}
@@ -250,6 +266,9 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
       </button>
       <button class="nav-tab" onclick="switchPage('preview')" data-page="preview">
         <span class="tab-icon">◈</span> Vista Previa
+      </button>
+      <button class="nav-tab" onclick="switchPage('historico')" data-page="historico">
+        <span class="tab-icon">◑</span> Historial Cot.
       </button>
       <button class="nav-tab" onclick="switchPage('drive')" data-page="drive">
         <span class="tab-icon">△</span> Drive Sync
@@ -682,18 +701,49 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
 
 <!-- ═══════════════ PAGE: PREVIEW ═══════════════ -->
 <div class="page" id="page-preview">
-  <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+  <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
     <button class="btn btn-outline" onclick="switchPage('cotizacion')">← Editar</button>
+    <button class="btn btn-success" onclick="guardarEnHistorico()" style="font-weight:600">◑ Guardar en historial</button>
     <button class="btn btn-primary" onclick="window.print()">⎙ Imprimir / PDF</button>
-    <button class="btn btn-success" onclick="exportarCSV()">↓ Exportar CSV</button>
-    <button class="btn btn-gold" onclick="copiarParaSheets()">⊞ Copiar para Google Sheets</button>
+    <button class="btn btn-gold" onclick="exportarCSV()">↓ Exportar CSV</button>
+    <button class="btn btn-outline" onclick="copiarParaSheets()">⊞ Copiar para Sheets</button>
+    <div id="preview-saved-badge" style="display:none;background:var(--green-light);color:var(--green);padding:5px 12px;border-radius:6px;font-size:12px;font-weight:500">✓ Guardada en historial</div>
   </div>
   <div class="print-panel" id="print-content">
     <!-- generated -->
   </div>
 </div>
 
-<!-- ═══════════════ PAGE: DRIVE SYNC ═══════════════ -->
+<!-- Auto-sync update banner -->
+<div class="sync-banner" id="sync-banner">
+  ↻ Lista de materiales actualizada por otro usuario — <strong id="sync-banner-count">0 productos</strong> recibidos
+  <button onclick="document.getElementById('sync-banner').classList.remove('show')" style="margin-left:12px;background:rgba(255,255,255,.2);border:none;color:#fff;padding:2px 10px;border-radius:4px;cursor:pointer;font-size:11px">✕ Cerrar</button>
+</div>
+
+<!-- ═══════════════ PAGE: HISTORICO COTIZACIONES ═══════════════ -->
+<div class="page" id="page-historico">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h2 style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:var(--accent)">Historial de Cotizaciones</h2>
+      <div style="font-size:12px;color:var(--text2);margin-top:3px"><span id="hist-count">0</span> cotizaciones guardadas</div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <select id="hist-filter-estado" class="filter-select" onchange="renderHistorico()">
+        <option value="">Todos los estados</option>
+        <option>Guardada</option><option>Enviada</option><option>Aprobada</option><option>Rechazada</option>
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="exportarHistoricoCSV()">↓ Exportar CSV</button>
+      <button class="btn btn-primary btn-sm" onclick="switchPage('cotizacion')">+ Nueva cotización</button>
+    </div>
+  </div>
+
+  <div id="hist-lista" style="display:flex;flex-direction:column;gap:12px">
+    <div class="empty-state">
+      <div class="empty-icon">◑</div>
+      <div class="empty-text">Aún no hay cotizaciones guardadas.<br>Genera una cotización y presiona "Guardar en historial".</div>
+    </div>
+  </div>
+</div>
 <div class="page" id="page-drive">
   <div style="display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start">
     <!-- LEFT: Setup & Status -->
@@ -1068,11 +1118,13 @@ function switchPage(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
-  document.querySelector('[data-page="'+id+'"]').classList.add('active');
+  const tab = document.querySelector('[data-page="'+id+'"]');
+  if(tab) tab.classList.add('active');
   if(id==='dashboard') updateDashboard();
   if(id==='materiales') renderMateriales();
   if(id==='cotizacion') renderCotizacion();
   if(id==='preview') renderPreview();
+  if(id==='historico') renderHistorico();
 }
 
 function updateDashboard(){
@@ -2029,6 +2081,8 @@ async function verificarConexion(){
     setDriveStatus('ok','Conectado');
     addLog(`Conexión OK — ${count} productos en Drive`,'ok');
     showNotif('Conexión con Drive verificada correctamente');
+    lastRemoteCount = count;
+    iniciarAutoSync();
   } catch(e){
     setDriveStatus('error','Error de conexión');
     addLog(`Error: ${e.message}`,'err');
@@ -2164,11 +2218,289 @@ function exportarListaJSON(){
   showNotif('Lista exportada como JSON — arrastra el archivo a Drive');
 }
 
+// ─── HISTORIAL DE COTIZACIONES ───────────────────────────────────────────────
+let historicoCot = [];
+
+function loadHistorico(){
+  try {
+    const saved = localStorage.getItem('tyc_historico');
+    if(saved) historicoCot = JSON.parse(saved);
+  } catch(e){ historicoCot = []; }
+}
+
+function saveHistorico(){
+  try { localStorage.setItem('tyc_historico', JSON.stringify(historicoCot)); } catch(e){}
+}
+
+function generarNroCot(){
+  const year = new Date().getFullYear();
+  const existing = historicoCot.filter(c => c.num && c.num.includes(String(year)));
+  const next = existing.length + 1;
+  return `COT-${String(next).padStart(3,'0')}-${year}`;
+}
+
+function guardarEnHistorico(){
+  // Collect current cotización data
+  const num    = document.getElementById('cot-num').value.trim() || generarNroCot();
+  const cliente= document.getElementById('cot-cliente').value.trim() || '(Sin cliente)';
+  const ruc    = document.getElementById('cot-ruc').value.trim();
+  const fechaR = document.getElementById('cot-fecha').value;
+  const lugar  = document.getElementById('cot-lugar').value.trim();
+  const desc   = document.getElementById('cot-desc').value.trim();
+  const cat    = document.getElementById('cot-categoria').value;
+  const validez= document.getElementById('cot-validez').value;
+  const condpago= document.getElementById('cot-condpago').value;
+  const margin = parseInt(document.getElementById('margin-slider').value)/100;
+
+  // Calculate total
+  let grandVenta = 0;
+  COT_SECTIONS.forEach(sec=>{
+    sec.items.forEach(item=>{
+      const m = item.margin!==null?item.margin:margin;
+      grandVenta += item.qty*item.costo*(1+m);
+    });
+  });
+  const totalConIGV = grandVenta*1.18;
+
+  // Deep-copy sections
+  const secsCopy = COT_SECTIONS.map(sec=>({
+    label: sec.label,
+    items: sec.items.map(it=>({...it}))
+  }));
+
+  // Collect relatorio
+  const relatorio = {
+    fecha:    document.getElementById('vt-fecha').value,
+    tecnico:  document.getElementById('vt-tecnico').value,
+    hora:     document.getElementById('vt-hora').value,
+    ubicacion:document.getElementById('vt-ubicacion').value,
+    problema: document.getElementById('vt-problema').value,
+    trabajos: document.getElementById('vt-trabajos').value,
+    obs:      document.getElementById('vt-obs').value,
+    fotos:    vtFotos.map(f=>({name:f.name, caption:f.caption, dataUrl:f.dataUrl}))
+  };
+
+  const entrada = {
+    id:        Date.now(),
+    num,
+    cliente,
+    ruc,
+    fecha:     fechaR || new Date().toISOString().slice(0,10),
+    lugar,
+    desc,
+    cat,
+    validez,
+    condpago,
+    margin,
+    totalConIGV,
+    estado:    'Guardada',
+    secciones: secsCopy,
+    relatorio,
+    savedAt:   new Date().toISOString()
+  };
+
+  // Check if same N° already exists — update it
+  const existIdx = historicoCot.findIndex(c=>c.num===num);
+  if(existIdx>=0){
+    if(!confirm(`La cotización ${num} ya existe en el historial. ¿Actualizarla?`)) return;
+    historicoCot[existIdx] = entrada;
+    showNotif(`Cotización ${num} actualizada en el historial`);
+  } else {
+    historicoCot.unshift(entrada);
+    showNotif(`Cotización ${num} guardada en el historial`);
+    // Auto-fill the N° if empty
+    if(!document.getElementById('cot-num').value.trim()){
+      document.getElementById('cot-num').value = num;
+    }
+  }
+
+  saveHistorico();
+
+  // Show saved badge
+  const badge = document.getElementById('preview-saved-badge');
+  if(badge){ badge.style.display='block'; setTimeout(()=>badge.style.display='none', 4000); }
+
+  addLog(`Cotización ${num} — ${cliente} — ${fmt(totalConIGV)} guardada en historial`, 'ok');
+  updateDashboard();
+}
+
+function renderHistorico(){
+  const estadoFilter = document.getElementById('hist-filter-estado').value;
+  const lista = document.getElementById('hist-lista');
+  const countEl = document.getElementById('hist-count');
+
+  const filtered = historicoCot.filter(c=>!estadoFilter||c.estado===estadoFilter);
+  countEl.textContent = filtered.length;
+
+  if(!filtered.length){
+    lista.innerHTML = `<div class="empty-state"><div class="empty-icon">◑</div><div class="empty-text">No hay cotizaciones${estadoFilter?' con estado "'+estadoFilter+'"':''} en el historial.<br>Ve a Vista Previa y presiona "Guardar en historial".</div></div>`;
+    return;
+  }
+
+  lista.innerHTML = filtered.map(c=>{
+    const estadoClass = {
+      'Guardada':'estado-guardada','Enviada':'estado-enviada',
+      'Aprobada':'estado-aprobada','Rechazada':'estado-rechazada'
+    }[c.estado]||'estado-guardada';
+
+    const fechaFmt = c.fecha ? new Date(c.fecha+'T12:00').toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
+    const savedFmt = c.savedAt ? new Date(c.savedAt).toLocaleString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+
+    return `<div class="hist-card" id="hc-${c.id}">
+      <div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+          <span class="hist-num">${c.num}</span>
+          <span class="badge-estado ${estadoClass}">${c.estado}</span>
+          ${c.cat?`<span style="font-size:11px;color:var(--text3)">${c.cat}</span>`:''}
+        </div>
+        <div class="hist-cliente">${c.cliente}${c.ruc?` — RUC: ${c.ruc}`:''}</div>
+        <div class="hist-meta">
+          ${c.desc||''}${c.lugar?` • ${c.lugar}`:''}${c.validez?` • Validez: ${c.validez}`:''}
+        </div>
+        <div class="hist-meta" style="margin-top:3px">Pago: ${c.condpago||'—'} • Guardado: ${savedFmt}</div>
+      </div>
+      <div>
+        <div class="hist-total">${fmt(c.totalConIGV)}</div>
+        <div class="hist-fecha">${fechaFmt}</div>
+      </div>
+      <div class="hist-actions">
+        <button class="btn btn-primary btn-sm" onclick="cargarDesdeHistorico(${c.id})">↺ Cargar</button>
+        <button class="btn btn-outline btn-sm" onclick="verHistorico(${c.id})">◈ Ver PDF</button>
+        <select class="filter-select" style="font-size:11px;padding:5px 8px" onchange="cambiarEstado(${c.id},this.value)">
+          <option value="Guardada"${c.estado==='Guardada'?' selected':''}>Guardada</option>
+          <option value="Enviada"${c.estado==='Enviada'?' selected':''}>Enviada</option>
+          <option value="Aprobada"${c.estado==='Aprobada'?' selected':''}>Aprobada</option>
+          <option value="Rechazada"${c.estado==='Rechazada'?' selected':''}>Rechazada</option>
+        </select>
+        <button class="btn btn-danger btn-sm" onclick="eliminarHistorico(${c.id})">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function cambiarEstado(id, estado){
+  const idx = historicoCot.findIndex(c=>c.id===id);
+  if(idx>=0){ historicoCot[idx].estado = estado; saveHistorico(); }
+  showNotif('Estado actualizado: '+estado);
+}
+
+function eliminarHistorico(id){
+  const c = historicoCot.find(h=>h.id===id);
+  if(!c||!confirm(`¿Eliminar la cotización ${c.num} del historial?`)) return;
+  historicoCot = historicoCot.filter(h=>h.id!==id);
+  saveHistorico();
+  renderHistorico();
+  showNotif('Cotización eliminada del historial','error');
+}
+
+function cargarDesdeHistorico(id){
+  const c = historicoCot.find(h=>h.id===id);
+  if(!c) return;
+  // Restore client fields
+  document.getElementById('cot-num').value     = c.num;
+  document.getElementById('cot-cliente').value = c.cliente;
+  document.getElementById('cot-ruc').value     = c.ruc||'';
+  document.getElementById('cot-fecha').value   = c.fecha;
+  document.getElementById('cot-lugar').value   = c.lugar||'';
+  document.getElementById('cot-desc').value    = c.desc||'';
+  if(c.cat) document.getElementById('cot-categoria').value = c.cat;
+  if(c.validez) document.getElementById('cot-validez').value = c.validez;
+  if(c.condpago) document.getElementById('cot-condpago').value = c.condpago;
+  document.getElementById('margin-slider').value = Math.round((c.margin||0.3)*100);
+  // Restore sections
+  c.secciones.forEach((sec,i)=>{ COT_SECTIONS[i].items = sec.items.map(it=>({...it})); });
+  // Restore relatorio
+  if(c.relatorio){
+    const r = c.relatorio;
+    ['fecha','tecnico','hora','ubicacion','problema','trabajos','obs'].forEach(k=>{
+      const el=document.getElementById('vt-'+k); if(el) el.value=r[k]||'';
+    });
+    vtFotos = (r.fotos||[]).map(f=>({...f}));
+    renderFotosGrid();
+  }
+  switchPage('cotizacion');
+  showNotif(`Cotización ${c.num} cargada — puedes editar y guardar de nuevo`);
+}
+
+function verHistorico(id){
+  const c = historicoCot.find(h=>h.id===id);
+  if(!c) return;
+  cargarDesdeHistorico(id);
+  setTimeout(()=>{ renderPreview(); switchPage('preview'); }, 200);
+}
+
+function exportarHistoricoCSV(){
+  if(!historicoCot.length){ showNotif('No hay cotizaciones en el historial','error'); return; }
+  const headers = ['N° Cotización','Cliente','RUC','Fecha','Lugar','Descripción','Categoría','Validez','Condición Pago','Total c/IGV','Estado','Guardado'];
+  const rows = historicoCot.map(c=>[c.num,c.cliente,c.ruc||'',c.fecha,c.lugar||'',c.desc||'',c.cat||'',c.validez||'',c.condpago||'',c.totalConIGV.toFixed(2),c.estado,c.savedAt]);
+  const csv = [headers,...rows].map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download = 'TYC_Historico_'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  showNotif('Historial exportado como CSV');
+}
+
+// ─── AUTO-SYNC: Poll Drive for updates every 60 seconds ─────────────────────
+let autoSyncInterval = null;
+let lastRemoteCount = null;
+
+function iniciarAutoSync(){
+  if(autoSyncInterval) clearInterval(autoSyncInterval);
+  if(!driveConfig.url) return;
+  autoSyncInterval = setInterval(async()=>{
+    if(!driveConfig.url || !driveConnected) return;
+    try {
+      const res = await fetch(driveConfig.url+'?t='+Date.now());
+      const data = await res.json();
+      if(!data.ok || !data.productos) return;
+      const remoteCount = data.count||data.productos.length;
+      // If remote has more/different products → update local
+      if(lastRemoteCount !== null && remoteCount !== lastRemoteCount){
+        const remoteProd = data.productos;
+        // Merge: keep local edits, add remote new ones
+        remoteProd.forEach(rp=>{
+          const localIdx = productos.findIndex(p=>p.n===rp.n);
+          if(localIdx<0) productos.push(rp); // new product added by teammate
+          // Don't overwrite local edits unless remote is explicitly newer
+        });
+        productos.sort((a,b)=>a.n-b.n);
+        // Show banner
+        const banner = document.getElementById('sync-banner');
+        document.getElementById('sync-banner-count').textContent = remoteCount+' productos';
+        banner.classList.add('show');
+        setTimeout(()=>banner.classList.remove('show'), 8000);
+        updateDashboard();
+        if(document.getElementById('page-materiales').classList.contains('active')) renderMateriales();
+        addLog(`Auto-sync: ${remoteCount} productos recibidos desde Drive`,'ok');
+        document.getElementById('drive-last-sync').textContent = new Date().toLocaleTimeString('es-PE');
+      }
+      lastRemoteCount = remoteCount;
+      document.getElementById('drive-remote-count').textContent = remoteCount;
+    } catch(e){ /* silent fail on auto-sync */ }
+  }, 60000); // every 60 seconds
+}
+
+// Auto-generate N° cotización when field is empty on focus
+function setupCotNum(){
+  const el = document.getElementById('cot-num');
+  if(!el) return;
+  el.addEventListener('focus', ()=>{
+    if(!el.value.trim()){
+      el.value = generarNroCot();
+    }
+  });
+}
+
 // Init
 document.getElementById('cot-fecha').value = new Date().toISOString().slice(0,10);
 loadDriveConfig();
+loadHistorico();
 updateDashboard();
 renderMateriales();
+setupCotNum();
+// Start auto-sync after drive config loaded
+setTimeout(()=>{ if(driveConfig.url && driveConnected) iniciarAutoSync(); }, 3000);
 </script>
 </body>
 </html>
