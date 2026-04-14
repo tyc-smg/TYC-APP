@@ -779,6 +779,8 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
         <option value="">Todos los estados</option>
         <option>Guardada</option><option>Enviada</option><option>Aprobada</option><option>Rechazada</option>
       </select>
+      <button class="btn btn-success btn-sm" onclick="subirHistorialDrive()" id="btn-hist-upload" title="Guarda el historial completo en Drive">△ Subir a Drive</button>
+      <button class="btn btn-outline btn-sm" onclick="cargarHistorialDrive()" id="btn-hist-download" title="Carga el historial guardado en Drive">↓ Cargar desde Drive</button>
       <button class="btn btn-outline btn-sm" onclick="exportarHistoricoCSV()">↓ Exportar CSV</button>
       <button class="btn btn-primary btn-sm" onclick="switchPage('cotizacion')">+ Nueva cotización</button>
     </div>
@@ -838,6 +840,36 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
             <button class="btn btn-outline btn-sm" onclick="verificarConexion()" style="justify-content:center">◎ Verificar conexión</button>
             <button class="btn btn-outline btn-sm" onclick="abrirDrive()" style="justify-content:center">⤤ Abrir Drive</button>
             <button class="btn btn-outline btn-sm" onclick="toggleAutoSync()" id="btn-autosync" style="justify-content:center">⟳ Auto-sync: OFF</button>
+          </div>
+
+          <!-- Historial sync -->
+          <div style="border-top:1px solid var(--border2);padding-top:14px;margin-top:4px">
+            <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Historial de Cotizaciones en Drive</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px">
+              <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center">
+                <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Local</div>
+                <div id="hist-local-count" style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:var(--accent)">0</div>
+              </div>
+              <div style="background:var(--surface2);border-radius:8px;padding:10px;text-align:center">
+                <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">En Drive</div>
+                <div id="hist-drive-count" style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:var(--green)">—</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+              <button class="btn btn-success" onclick="subirHistorialDrive()" id="btn-hist-drive-up" style="justify-content:center;flex-direction:column;gap:3px;height:auto;padding:10px">
+                <span style="font-size:16px">△</span>
+                <span style="font-size:11px;font-weight:600">Subir historial</span>
+                <span style="font-size:10px;opacity:.8">Guarda en Drive</span>
+              </button>
+              <button class="btn btn-outline" onclick="cargarHistorialDrive()" id="btn-hist-drive-down" style="justify-content:center;flex-direction:column;gap:3px;height:auto;padding:10px">
+                <span style="font-size:16px">↓</span>
+                <span style="font-size:11px;font-weight:600">Cargar historial</span>
+                <span style="font-size:10px;opacity:.8">Lee desde Drive</span>
+              </button>
+            </div>
+            <div style="font-size:11px;color:var(--text3);margin-top:8px;text-align:center">
+              Archivo: <code style="background:var(--surface2);padding:1px 5px;border-radius:3px">TYC_Historico_2026.json</code>
+            </div>
           </div>
 
           <!-- Diff indicator -->
@@ -2698,116 +2730,212 @@ function abrirDrive(){
 }
 
 function copiarScript(){
-  const code = `// TYC Servicios — Drive Sync v3 (2026)
-const FOLDER_ID = '1Z7HuRjfjWXOgjwBX9GElgXHFnqV2B9pm';
-const FILE_NAME  = 'TYC_Materiales_2026.json';
-const LOG_NAME   = 'TYC_SyncLog_2026.json';
+  const code = `// ═══════════════════════════════════════════════════════════════
+//  TYC SERVICIOS Y MANTENIMIENTO GENERALES S.R.L.
+//  Drive Sync Backend v4 — Google Apps Script
+//  Incluye: Materiales + Historial de Cotizaciones
+//  Compatible: Apps Script ES5 (sin spread, sin arrow functions)
+// ═══════════════════════════════════════════════════════════════
 
+var FOLDER_ID  = '1Z7HuRjfjWXOgjwBX9GElgXHFnqV2B9pm';
+var FILE_MAT   = 'TYC_Materiales_2026.json';
+var FILE_HIST  = 'TYC_Historico_2026.json';
+var FILE_LOG   = 'TYC_SyncLog_2026.json';
+
+// ── doGet: Leer datos ────────────────────────────────────────────
 function doGet(e) {
   try {
-    const list = loadFromFile(FILE_NAME);
-    return buildResponse({ok:true, productos:list, count:list.length, timestamp:new Date().toISOString()});
-  } catch(err) {
-    return buildResponse({ok:false, msg:err.message});
+    var action = e.parameter.action || 'get_all';
+
+    if (action === 'get_all' || action === 'ping') {
+      var list = loadFromFile(FILE_MAT);
+      return buildResponse({
+        ok: true,
+        productos: list,
+        count: list.length,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    if (action === 'get_historico') {
+      var hist = loadFromFile(FILE_HIST);
+      return buildResponse({
+        ok: true,
+        historico: hist,
+        count: hist.length,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    return buildResponse({ ok: false, msg: 'Accion GET no reconocida: ' + action });
+
+  } catch (err) {
+    return buildResponse({ ok: false, msg: 'doGet error: ' + err.message });
   }
 }
 
+// ── doPost: Escribir datos ───────────────────────────────────────
 function doPost(e) {
   try {
-    const body   = JSON.parse(e.postData.contents);
-    const action = body.action;
+    var body   = JSON.parse(e.postData.contents);
+    var action = body.action;
 
+    // SYNC_ALL: Reemplaza lista de materiales
     if (action === 'sync_all') {
-      if (!body.productos || !Array.isArray(body.productos))
-        return buildResponse({ok:false, msg:'productos no es un array'});
-      saveToFile(body.productos, FILE_NAME);
-      appendLog('sync_all', {count:body.productos.length});
-      return buildResponse({ok:true, count:body.productos.length, timestamp:new Date().toISOString()});
+      if (!body.productos || !Array.isArray(body.productos)) {
+        return buildResponse({ ok: false, msg: 'sync_all: productos debe ser un array' });
+      }
+      saveToFile(body.productos, FILE_MAT);
+      appendLog('sync_all', { count: body.productos.length });
+      return buildResponse({
+        ok: true,
+        count: body.productos.length,
+        timestamp: new Date().toISOString()
+      });
     }
 
+    // SAVE_HISTORICO: Guarda historial de cotizaciones
+    if (action === 'save_historico') {
+      if (!body.historico || !Array.isArray(body.historico)) {
+        return buildResponse({ ok: false, msg: 'save_historico: historico debe ser un array' });
+      }
+      saveToFile(body.historico, FILE_HIST);
+      appendLog('save_historico', { count: body.historico.length });
+      return buildResponse({
+        ok: true,
+        msg: 'Historial guardado',
+        count: body.historico.length,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // ADD_PRODUCT
     if (action === 'add_product') {
-      const list = loadFromFile(FILE_NAME);
-      const p    = body.producto;
-      if (!p || !p.name) return buildResponse({ok:false, msg:'producto invalido'});
-      if (!p.n) p.n = list.length + 1;
+      var list = loadFromFile(FILE_MAT);
+      var p    = body.producto;
+      if (!p || !p.name) {
+        return buildResponse({ ok: false, msg: 'add_product: producto invalido' });
+      }
+      if (!p.n) { p.n = list.length + 1; }
       list.push(p);
-      saveToFile(list, FILE_NAME);
-      appendLog('add_product', {n:p.n, name:p.name});
-      return buildResponse({ok:true, total:list.length});
+      saveToFile(list, FILE_MAT);
+      appendLog('add_product', { n: p.n, name: p.name });
+      return buildResponse({ ok: true, total: list.length });
     }
 
+    // UPDATE_PRODUCT
     if (action === 'update_product') {
-      const list = loadFromFile(FILE_NAME);
-      const p    = body.producto;
-      if (!p || !p.n) return buildResponse({ok:false, msg:'falta producto.n'});
-      const idx = list.findIndex(x => x.n === p.n);
-      if (idx >= 0) list[idx] = p; else list.push(p);
-      saveToFile(list, FILE_NAME);
-      appendLog('update_product', {n:p.n, name:p.name, price_sin:p.price_sin});
-      return buildResponse({ok:true});
+      var list2 = loadFromFile(FILE_MAT);
+      var p2    = body.producto;
+      if (!p2 || !p2.n) {
+        return buildResponse({ ok: false, msg: 'update_product: falta producto.n' });
+      }
+      var idx = -1;
+      for (var i = 0; i < list2.length; i++) {
+        if (list2[i].n === p2.n) { idx = i; break; }
+      }
+      if (idx >= 0) { list2[idx] = p2; } else { list2.push(p2); }
+      saveToFile(list2, FILE_MAT);
+      appendLog('update_product', { n: p2.n, name: p2.name, price_sin: p2.price_sin });
+      return buildResponse({ ok: true });
     }
 
+    // DELETE_PRODUCT
     if (action === 'delete_product') {
-      let list    = loadFromFile(FILE_NAME);
-      const found = list.find(x => x.n === body.n);
-      if (!found) return buildResponse({ok:false, msg:'Producto no encontrado'});
-      list = list.filter(x => x.n !== body.n).map((x,i) => ({...x, n:i+1}));
-      saveToFile(list, FILE_NAME);
-      appendLog('delete_product', {name:found.name});
-      return buildResponse({ok:true, total:list.length});
+      var list3   = loadFromFile(FILE_MAT);
+      var delN    = body.n;
+      var found   = null;
+      var newList = [];
+      for (var j = 0; j < list3.length; j++) {
+        if (list3[j].n === delN) { found = list3[j]; }
+        else { newList.push(list3[j]); }
+      }
+      if (!found) {
+        return buildResponse({ ok: false, msg: 'Producto N ' + delN + ' no encontrado' });
+      }
+      for (var k = 0; k < newList.length; k++) { newList[k].n = k + 1; }
+      saveToFile(newList, FILE_MAT);
+      appendLog('delete_product', { name: found.name });
+      return buildResponse({ ok: true, total: newList.length });
     }
 
-    return buildResponse({ok:false, msg:'Accion no reconocida: ' + action});
-  } catch(err) {
-    return buildResponse({ok:false, msg:err.message});
+    return buildResponse({ ok: false, msg: 'Accion no reconocida: ' + action });
+
+  } catch (err) {
+    return buildResponse({ ok: false, msg: 'doPost error: ' + err.message });
   }
 }
 
+// ── buildResponse ────────────────────────────────────────────────
 function buildResponse(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+// ── saveToFile ───────────────────────────────────────────────────
 function saveToFile(data, name) {
-  const folder  = DriveApp.getFolderById(FOLDER_ID);
-  const files   = folder.getFilesByName(name);
-  const content = JSON.stringify(data, null, 2);
-  if (files.hasNext()) files.next().setContent(content);
-  else folder.createFile(name, content, MimeType.PLAIN_TEXT);
+  var folder  = DriveApp.getFolderById(FOLDER_ID);
+  var files   = folder.getFilesByName(name);
+  var content = JSON.stringify(data, null, 2);
+  if (files.hasNext()) {
+    files.next().setContent(content);
+  } else {
+    folder.createFile(name, content, MimeType.PLAIN_TEXT);
+  }
 }
 
+// ── loadFromFile ─────────────────────────────────────────────────
 function loadFromFile(name) {
   try {
-    const folder = DriveApp.getFolderById(FOLDER_ID);
-    const files  = folder.getFilesByName(name);
-    if (!files.hasNext()) return [];
-    const txt = files.next().getBlob().getDataAsString('UTF-8');
-    if (!txt || txt.trim() === '') return [];
+    var folder = DriveApp.getFolderById(FOLDER_ID);
+    var files  = folder.getFilesByName(name);
+    if (!files.hasNext()) { return []; }
+    var txt = files.next().getBlob().getDataAsString('UTF-8');
+    if (!txt || txt.trim() === '') { return []; }
     return JSON.parse(txt);
-  } catch(e) { return []; }
+  } catch (err) {
+    Logger.log('loadFromFile error (' + name + '): ' + err.message);
+    return [];
+  }
 }
 
+// ── appendLog ────────────────────────────────────────────────────
 function appendLog(action, details) {
   try {
-    const log = loadFromFile(LOG_NAME);
-    log.unshift({action, details, timestamp:new Date().toISOString(),
-      fecha:Utilities.formatDate(new Date(),'America/Lima','dd/MM/yyyy HH:mm')});
-    if(log.length > 200) log.splice(200);
-    saveToFile(log, LOG_NAME);
-  } catch(e){}
+    var log   = loadFromFile(FILE_LOG);
+    var entry = {};
+    entry.action    = action;
+    entry.details   = details;
+    entry.timestamp = new Date().toISOString();
+    entry.fecha     = Utilities.formatDate(new Date(), 'America/Lima', 'dd/MM/yyyy HH:mm:ss');
+    log.unshift(entry);
+    if (log.length > 500) { log.splice(500); }
+    saveToFile(log, FILE_LOG);
+  } catch (err) {
+    Logger.log('appendLog error: ' + err.message);
+  }
 }
 
+// ── testConexion: Ejecutar esto PRIMERO para verificar ───────────
 function testConexion() {
-  const folder = DriveApp.getFolderById(FOLDER_ID);
-  const list   = loadFromFile(FILE_NAME);
-  Logger.log('OK Carpeta: ' + folder.getName());
-  Logger.log('OK Productos: ' + list.length);
-}`;
+  try {
+    var folder = DriveApp.getFolderById(FOLDER_ID);
+    var mats   = loadFromFile(FILE_MAT);
+    var hist   = loadFromFile(FILE_HIST);
+    Logger.log('OK - Carpeta: ' + folder.getName());
+    Logger.log('OK - Materiales: ' + mats.length + ' productos');
+    Logger.log('OK - Historial: ' + hist.length + ' cotizaciones');
+    Logger.log('OK - Script v4 listo para publicar');
+  } catch (err) {
+    Logger.log('ERROR: ' + err.message);
+  }
+}
+`;
   navigator.clipboard.writeText(code).then(()=>{
-    showNotif('Código v3 copiado al portapapeles');
-    addLog('Código Apps Script v3 copiado','info');
-  }).catch(()=>showNotif('Usa Ctrl+A en el bloque para copiar','error'));
+    showNotif('Código v4 copiado — incluye Materiales + Historial');
+    addLog('Código Apps Script v4 copiado','info');
+  }).catch(()=>showNotif('Selecciona el código manualmente','error'));
 }
 
 function exportarListaJSON(){
@@ -2827,10 +2955,114 @@ function loadHistorico(){
     const saved = localStorage.getItem('tyc_historico');
     if(saved) historicoCot = JSON.parse(saved);
   } catch(e){ historicoCot = []; }
+  // Update local count display
+  const el = document.getElementById('hist-local-count');
+  if(el) el.textContent = historicoCot.length;
 }
 
 function saveHistorico(){
   try { localStorage.setItem('tyc_historico', JSON.stringify(historicoCot)); } catch(e){}
+  // Update local count
+  const el = document.getElementById('hist-local-count');
+  if(el) el.textContent = historicoCot.length;
+}
+
+// ─── SUBIR HISTORIAL A DRIVE ──────────────────────────────────────
+async function subirHistorialDrive(){
+  if(!driveConfig.url){ showNotif('Configura el URL del Apps Script primero','error'); switchPage('drive'); return; }
+  if(!historicoCot.length){ showNotif('No hay cotizaciones en el historial para subir','error'); return; }
+
+  const btns = ['btn-hist-upload','btn-hist-drive-up'];
+  btns.forEach(id=>{ const b=document.getElementById(id); if(b) b.textContent='⟳ Subiendo...'; });
+  addLog(`Subiendo historial — ${historicoCot.length} cotizaciones...`,'info');
+
+  // Strip fotos (base64) from relatorio before uploading to save space
+  // Keep only caption and name, not the dataUrl
+  const histParaDrive = historicoCot.map(c=>{
+    const copy = Object.assign({}, c);
+    if(copy.relatorio && copy.relatorio.fotos){
+      copy.relatorio = Object.assign({}, copy.relatorio, {
+        fotos: copy.relatorio.fotos.map(f=>({name:f.name, caption:f.caption}))
+      });
+    }
+    return copy;
+  });
+
+  try {
+    const res = await driveRequest({action:'save_historico', historico: histParaDrive});
+    if(!res.ok) throw new Error(res.msg||'Error del servidor');
+    const el = document.getElementById('hist-drive-count');
+    if(el) el.textContent = res.count ?? histParaDrive.length;
+    addLog(`Historial subido — ${histParaDrive.length} cotizaciones en Drive`,'ok');
+    showNotif(`Historial guardado en Drive — ${histParaDrive.length} cotizaciones`);
+  } catch(e){
+    addLog('Error al subir historial: '+e.message,'err');
+    showNotif('Error al subir historial: '+e.message,'error');
+  }
+  btns.forEach(id=>{
+    const b = document.getElementById(id);
+    if(b){ b.innerHTML = id.includes('drive') ?
+      '<span style="font-size:16px">△</span><span style="font-size:11px;font-weight:600">Subir historial</span><span style="font-size:10px;opacity:.8">Guarda en Drive</span>' :
+      '△ Subir a Drive';
+    }
+  });
+}
+
+// ─── CARGAR HISTORIAL DESDE DRIVE ────────────────────────────────
+async function cargarHistorialDrive(){
+  if(!driveConfig.url){ showNotif('Configura el URL del Apps Script primero','error'); switchPage('drive'); return; }
+
+  const btns = ['btn-hist-download','btn-hist-drive-down'];
+  btns.forEach(id=>{ const b=document.getElementById(id); if(b) b.textContent='⟳ Cargando...'; });
+  addLog('Cargando historial desde Drive...','info');
+
+  try {
+    const res = await fetch(driveConfig.url+'?action=get_historico&t='+Date.now());
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.msg||'Error');
+    if(!data.historico || !data.historico.length) throw new Error('No hay historial en Drive todavía');
+
+    const remoto  = data.historico;
+    const localNums = new Set(historicoCot.map(c=>c.num));
+
+    // Merge: add remote entries not in local
+    let added = 0;
+    remoto.forEach(rc=>{
+      const localIdx = historicoCot.findIndex(c=>c.num===rc.num);
+      if(localIdx < 0){
+        historicoCot.push(rc);
+        added++;
+      } else {
+        // Keep remote if it's newer
+        const localDate  = new Date(historicoCot[localIdx].savedAt||0);
+        const remoteDate = new Date(rc.savedAt||0);
+        if(remoteDate > localDate){
+          historicoCot[localIdx] = rc;
+        }
+      }
+    });
+
+    // Sort by date descending
+    historicoCot.sort((a,b)=>new Date(b.savedAt||0)-new Date(a.savedAt||0));
+    saveHistorico();
+
+    const el = document.getElementById('hist-drive-count');
+    if(el) el.textContent = remoto.length;
+
+    addLog(`Historial cargado — ${remoto.length} en Drive, ${added} nuevas agregadas localmente`,'ok');
+    showNotif(`Historial actualizado — ${historicoCot.length} cotizaciones (${added} nuevas desde Drive)`);
+    if(document.getElementById('page-historico').classList.contains('active')) renderHistorico();
+  } catch(e){
+    addLog('Error al cargar historial: '+e.message,'err');
+    showNotif('Error al cargar historial: '+e.message,'error');
+  }
+  btns.forEach(id=>{
+    const b = document.getElementById(id);
+    if(b){ b.innerHTML = id.includes('drive') ?
+      '<span style="font-size:16px">↓</span><span style="font-size:11px;font-weight:600">Cargar historial</span><span style="font-size:10px;opacity:.8">Lee desde Drive</span>' :
+      '↓ Cargar desde Drive';
+    }
+  });
 }
 
 function generarNroCot(){
@@ -2916,6 +3148,11 @@ function guardarEnHistorico(){
   }
 
   saveHistorico();
+
+  // Auto-push to Drive if connected
+  if(driveConfig.url && driveConnected){
+    subirHistorialDrive();
+  }
 
   // Show saved badge
   const badge = document.getElementById('preview-saved-badge');
