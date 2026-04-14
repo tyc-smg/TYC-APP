@@ -2096,36 +2096,172 @@ let jsonManualData = null;
 
 function previsualizarJSON(input){
   const file = input.files[0];
-  if(!file) return;
-  document.getElementById('json-file-name').textContent = file.name;
+  if(!file){ return; }
+
+  // Show filename immediately
+  document.getElementById('json-file-name').textContent = file.name + ' (' + (file.size/1024).toFixed(1) + ' KB)';
+
+  // Validate extension loosely
+  const name = file.name.toLowerCase();
+  if(!name.endsWith('.json') && !name.endsWith('.txt')){
+    document.getElementById('json-preview-content').innerHTML =
+      `<div style="color:var(--red);font-size:12px">⚠ El archivo debe ser .json — seleccionaste: <b>${file.name}</b></div>`;
+    document.getElementById('json-preview-box').style.display = 'block';
+    return;
+  }
+
   const reader = new FileReader();
-  reader.onload = e=>{
+  reader.onload = e => {
+    const raw = e.target.result;
+    const preview = document.getElementById('json-preview-box');
+    const content = document.getElementById('json-preview-content');
+
+    // Show raw preview for diagnosis
+    const snippet = raw.substring(0,120).replace(/</g,'&lt;');
+
     try {
-      const raw = JSON.parse(e.target.result);
-      const arr = Array.isArray(raw)?raw:(raw.productos||null);
-      if(!arr||!arr.length) throw new Error('No contiene productos válidos');
-      jsonManualData = arr;
-      const catMap = {};
-      arr.forEach(p=>{catMap[p.cat||'Sin cat']=(catMap[p.cat||'Sin cat']||0)+1;});
-      const catRows = Object.entries(catMap).sort((a,b)=>b[1]-a[1]).map(([c,n])=>`<span style="display:inline-flex;gap:4px;margin:2px;padding:2px 8px;background:var(--surface);border-radius:10px;border:1px solid var(--border2);font-size:11px">${c}: <b>${n}</b></span>`).join('');
-      document.getElementById('json-preview-content').innerHTML = `
-        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-          <div style="background:var(--green-light);color:var(--green);padding:5px 12px;border-radius:7px;font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600">${arr.length}</div>
-          <div style="font-size:13px;color:var(--text2)">productos en <b>${file.name}</b></div>
+      // Try parse
+      let parsed = JSON.parse(raw);
+
+      // Accept multiple formats:
+      // 1. Plain array: [{n:1, name:...}, ...]
+      // 2. {productos:[...]}
+      // 3. {ok:true, productos:[...]}  ← Apps Script response
+      let arr = null;
+      if(Array.isArray(parsed)){
+        arr = parsed;
+      } else if(parsed && Array.isArray(parsed.productos)){
+        arr = parsed.productos;
+      } else if(parsed && Array.isArray(parsed.data)){
+        arr = parsed.data;
+      }
+
+      if(!arr){
+        content.innerHTML = `<div style="color:var(--red);font-size:12px;margin-bottom:8px">
+          ⚠ El JSON no tiene el formato esperado.<br>
+          Se esperaba: un array <code>[{...}]</code> o un objeto con clave <code>"productos"</code>.<br><br>
+          <b>Inicio del archivo:</b><br>
+          <code style="word-break:break-all">${snippet}...</code>
         </div>
-        <div style="margin-bottom:6px;font-size:12px;color:var(--text2)">Categorías:</div>
-        <div style="margin-bottom:8px">${catRows}</div>
-        <div style="font-size:12px;color:var(--text2)">Primeros: ${arr.slice(0,3).map(p=>`<b>${p.name}</b>`).join(', ')}${arr.length>3?'…':''}</div>
-        <div style="margin-top:8px;font-size:11px;color:var(--text3)">⚠ Reemplazará los ${productos.length} productos actuales con los ${arr.length} del archivo.</div>`;
-      document.getElementById('json-preview-box').style.display = 'block';
-      showNotif(`Archivo leído: ${arr.length} productos encontrados`);
+        <button class="btn btn-gold btn-sm" onclick="descargarJsonEjemplo()" style="margin-top:8px">↓ Descargar JSON de ejemplo</button>`;
+        preview.style.display = 'block';
+        jsonManualData = null;
+        return;
+      }
+
+      if(arr.length === 0){
+        content.innerHTML = `<div style="color:var(--gold);font-size:12px">
+          ⚠ El archivo JSON está vacío (0 productos).<br><br>
+          Primero debes subir la lista al Drive usando el botón <b>"↑ Guardar en Drive"</b> con el Apps Script configurado,
+          o usa el botón <b>"↓ Descargar JSON actual"</b> para obtener el archivo correcto.
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px">
+          <button class="btn btn-success btn-sm" onclick="exportarListaJSON()">↓ Descargar JSON actual (${productos.length} productos)</button>
+        </div>`;
+        preview.style.display = 'block';
+        jsonManualData = null;
+        return;
+      }
+
+      // Validate that items look like products
+      const sample = arr[0];
+      const hasName = sample && (sample.name || sample.nombre || sample.NOMBRE || sample['MATERIAL / DESCRIPCIÓN']);
+      if(!hasName){
+        content.innerHTML = `<div style="color:var(--gold);font-size:12px;margin-bottom:8px">
+          ⚠ Los datos no parecen productos de TYC (falta campo "name").<br>
+          <b>Primer elemento:</b><br>
+          <code style="font-size:10px;word-break:break-all">${JSON.stringify(sample).substring(0,200)}</code>
+        </div>`;
+        preview.style.display = 'block';
+        jsonManualData = null;
+        return;
+      }
+
+      // Normalize field names if needed
+      arr = arr.map((p, i) => ({
+        n:         p.n || i+1,
+        name:      p.name || p.nombre || p['MATERIAL / DESCRIPCIÓN'] || p.NOMBRE || '',
+        spec:      p.spec || p.especificacion || p['ESPECIFICACIÓN'] || '',
+        cat:       p.cat || p.categoria || p['CATEGORÍA'] || '',
+        unit:      p.unit || p.unidad || p['UNID.'] || 'und',
+        price_sin: parseFloat(p.price_sin || p.precio_sin_igv || p['P. UNIT. S/\n(sin IGV)'] || 0),
+        price_con: parseFloat(p.price_con || p.precio_con_igv || p['P. UNIT. S/\n(con IGV)'] || 0),
+        prov:      p.prov || p.proveedor || p['PROVEEDOR'] || '',
+        doc:       p.doc || p.documento || p['FUENTE / DOCUMENTO'] || '',
+        fecha:     p.fecha || p['FECHA COT.'] || '',
+        obs:       p.obs || p.observaciones || p['OBSERVACIONES'] || '',
+      }));
+
+      jsonManualData = arr;
+
+      // Build category summary
+      const catMap = {};
+      arr.forEach(p => { catMap[p.cat||'Sin categoría'] = (catMap[p.cat||'Sin categoría']||0)+1; });
+      const catRows = Object.entries(catMap).sort((a,b)=>b[1]-a[1])
+        .map(([c,n]) => `<span style="display:inline-flex;gap:4px;margin:2px;padding:3px 9px;background:var(--surface);border-radius:10px;border:1px solid var(--border2);font-size:11px">${c}: <b>${n}</b></span>`)
+        .join('');
+
+      const provs = [...new Set(arr.map(p=>p.prov).filter(Boolean))];
+
+      content.innerHTML = `
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+          <div style="background:var(--green-light);color:var(--green);padding:8px 16px;border-radius:8px;font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:600">${arr.length}</div>
+          <div>
+            <div style="font-size:14px;font-weight:500;color:var(--text)">productos en <b>${file.name}</b></div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">${(file.size/1024).toFixed(1)} KB · ${provs.length} proveedores</div>
+          </div>
+          <div style="margin-left:auto;background:var(--green-light);color:var(--green);padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600">✓ Formato válido</div>
+        </div>
+        <div style="margin-bottom:6px;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Categorías</div>
+        <div style="margin-bottom:10px;display:flex;flex-wrap:wrap">${catRows}</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Primeros productos: ${arr.slice(0,4).map(p=>`<b>${p.name}</b>`).join(' · ')}${arr.length>4?' …':''}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px;padding:8px 10px;background:var(--yellow);border-radius:6px">
+          ⚠ Reemplazará los <b>${productos.length}</b> productos actuales con los <b>${arr.length}</b> del archivo.
+        </div>`;
+      preview.style.display = 'block';
+      showNotif(`✓ Archivo válido — ${arr.length} productos listos para cargar`);
+
     } catch(err){
-      showNotif('Error al leer JSON: '+err.message,'error');
+      // JSON parse error — show detailed diagnosis
+      const isHtml = raw.trim().startsWith('<');
+      const isGSheet = raw.includes('spreadsheetml') || raw.includes('<!DOCTYPE');
+      let hint = '';
+      if(isHtml || isGSheet){
+        hint = `<br><br><b>El archivo descargado parece ser una página HTML, no un JSON.</b><br>
+          Esto pasa cuando el archivo en Drive es una Hoja de Cálculo de Google en vez de un JSON.<br><br>
+          <b>Solución:</b> usa el botón <b>"↓ Descargar JSON actual"</b> para obtener el archivo correcto con los ${productos.length} productos locales, luego súbelo a Drive.`;
+      } else {
+        hint = `<br><br><b>Inicio del archivo:</b><br><code style="font-size:10px;word-break:break-all">${snippet}</code>`;
+      }
+      content.innerHTML = `<div style="color:var(--red);font-size:12px">
+        ⚠ Error al leer el archivo: <b>${err.message}</b>${hint}
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-success btn-sm" onclick="exportarListaJSON()">↓ Descargar JSON actual (${productos.length} productos)</button>
+        <button class="btn btn-outline btn-sm" onclick="descargarJsonEjemplo()">↓ Descargar JSON de ejemplo</button>
+      </div>`;
+      preview.style.display = 'block';
       jsonManualData = null;
-      document.getElementById('json-preview-box').style.display = 'none';
+      addLog('Error al leer JSON: ' + err.message, 'err');
     }
   };
-  reader.readAsText(file);
+
+  reader.onerror = () => {
+    showNotif('No se pudo leer el archivo — intenta con otro navegador', 'error');
+  };
+
+  reader.readAsText(file, 'UTF-8');
+}
+
+function descargarJsonEjemplo(){
+  // Download a sample with first 3 products so user knows the format
+  const sample = productos.slice(0,3);
+  const json = JSON.stringify(sample, null, 2);
+  const a = document.createElement('a');
+  a.href = 'data:application/json;charset=utf-8,'+encodeURIComponent(json);
+  a.download = 'TYC_ejemplo_formato.json';
+  a.click();
+  showNotif('Ejemplo descargado — así debe ser el formato del JSON');
 }
 
 function aplicarJsonManual(){
