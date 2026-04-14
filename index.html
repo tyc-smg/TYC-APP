@@ -351,20 +351,55 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
         <div class="search-box">
           <input type="text" id="mat-search" placeholder="Buscar material, proveedor, especificación..." oninput="filtrarMateriales()">
         </div>
+        <select class="filter-select" id="mat-grupo-filter" onchange="filtrarMateriales()" style="background:var(--accent);color:#fff;font-weight:500">
+          <option value="">⊞ Todos los grupos</option>
+          <option value="0">① Mano de Obra</option>
+          <option value="1">② Diarias</option>
+          <option value="2">③ Materiales</option>
+          <option value="3">④ Herramientas</option>
+          <option value="4">⑤ Costos</option>
+        </select>
         <select class="filter-select" id="mat-cat-filter" onchange="filtrarMateriales()">
           <option value="">Todas las categorías</option>
-          <option>Metales y estructuras</option>
-          <option>Pintura y recubrimientos</option>
-          <option>Quimicos y solventes</option>
-          <option>Herramientas y equipos</option>
-          <option>Soldadura y consumibles</option>
-          <option>Mano de obra</option>
-          <option>Limpieza y mantenimiento</option>
+          <optgroup label="① Mano de Obra">
+            <option>Mano de obra</option>
+          </optgroup>
+          <optgroup label="② Diarias">
+            <option>Diarias y viaticos</option>
+          </optgroup>
+          <optgroup label="③ Materiales">
+            <option>Metales y estructuras</option>
+            <option>Pintura y recubrimientos</option>
+            <option>Quimicos y solventes</option>
+            <option>Soldadura y consumibles</option>
+            <option>Limpieza y mantenimiento</option>
+            <option>Tornilleria y fijaciones</option>
+            <option>Madera y construccion</option>
+            <option>Plomeria y sanitario</option>
+            <option>Otros materiales</option>
+          </optgroup>
+          <optgroup label="④ Herramientas">
+            <option>Herramientas y equipos</option>
+            <option>Electrico y electronico</option>
+          </optgroup>
+          <optgroup label="⑤ Costos">
+            <option>Seguridad y EPP</option>
+            <option>Costos administrativos</option>
+          </optgroup>
         </select>
         <select class="filter-select" id="mat-prov-filter" onchange="filtrarMateriales()">
           <option value="">Todos los proveedores</option>
         </select>
       </div>
+    </div>
+    <!-- Grupo pill tabs -->
+    <div style="padding:10px 20px;border-bottom:1px solid var(--border2);display:flex;gap:6px;flex-wrap:wrap;background:var(--surface2)">
+      <button class="pill-tab active" id="pill-all" onclick="filtrarPorGrupo('')">⊞ Todos</button>
+      <button class="pill-tab" id="pill-0" onclick="filtrarPorGrupo('0')" style="--pill-c:#1F3864">① Mano de Obra</button>
+      <button class="pill-tab" id="pill-1" onclick="filtrarPorGrupo('1')" style="--pill-c:#854F0B">② Diarias</button>
+      <button class="pill-tab" id="pill-2" onclick="filtrarPorGrupo('2')" style="--pill-c:#375623">③ Materiales</button>
+      <button class="pill-tab" id="pill-3" onclick="filtrarPorGrupo('3')" style="--pill-c:#634B09">④ Herramientas</button>
+      <button class="pill-tab" id="pill-4" onclick="filtrarPorGrupo('4')" style="--pill-c:#555555">⑤ Costos</button>
     </div>
     <div class="table-wrap">
       <table>
@@ -372,7 +407,7 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
           <tr>
             <th>#</th>
             <th>Material / Descripción</th>
-            <th>Categoría</th>
+            <th>Grupo / Categoría</th>
             <th>Und.</th>
             <th style="text-align:right">P. sin IGV</th>
             <th style="text-align:right">P. con IGV</th>
@@ -413,19 +448,31 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
               <label class="form-label">Categoría <span class="required">*</span></label>
               <select class="form-control" id="np-cat" onchange="actualizarPreview()">
                 <option value="">— Seleccionar —</option>
-                <option>Metales y estructuras</option>
-                <option>Pintura y recubrimientos</option>
-                <option>Quimicos y solventes</option>
-                <option>Herramientas y equipos</option>
-                <option>Soldadura y consumibles</option>
-                <option>Mano de obra</option>
-                <option>Limpieza y mantenimiento</option>
-                <option>Tornilleria y fijaciones</option>
-                <option>Electrico y electronico</option>
-                <option>Madera y construccion</option>
-                <option>Seguridad y EPP</option>
-                <option>Plomeria y sanitario</option>
-                <option>Otros materiales</option>
+                <optgroup label="① Mano de Obra">
+                  <option>Mano de obra</option>
+                </optgroup>
+                <optgroup label="② Diarias">
+                  <option>Diarias y viaticos</option>
+                </optgroup>
+                <optgroup label="③ Materiales">
+                  <option>Metales y estructuras</option>
+                  <option>Pintura y recubrimientos</option>
+                  <option>Quimicos y solventes</option>
+                  <option>Soldadura y consumibles</option>
+                  <option>Limpieza y mantenimiento</option>
+                  <option>Tornilleria y fijaciones</option>
+                  <option>Madera y construccion</option>
+                  <option>Plomeria y sanitario</option>
+                  <option>Otros materiales</option>
+                </optgroup>
+                <optgroup label="④ Herramientas">
+                  <option>Herramientas y equipos</option>
+                  <option>Electrico y electronico</option>
+                </optgroup>
+                <optgroup label="⑤ Costos">
+                  <option>Seguridad y EPP</option>
+                  <option>Costos administrativos</option>
+                </optgroup>
               </select>
             </div>
             <div class="form-group">
@@ -594,13 +641,13 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
       <div id="cot-sections"></div>
 
       <!-- Add item buttons -->
-      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;padding:16px;background:var(--surface2);border-radius:8px;border:1px dashed var(--border)">
-        <span style="font-size:12px;color:var(--text2);font-weight:600;align-self:center;text-transform:uppercase;letter-spacing:.5px">Agregar ítem:</span>
-        <button class="btn btn-outline btn-sm" onclick="addCotItem(0)">+ Mano de obra</button>
-        <button class="btn btn-outline btn-sm" onclick="addCotItem(1)">+ Diarias</button>
-        <button class="btn btn-outline btn-sm" onclick="addCotItem(2)">+ Material</button>
-        <button class="btn btn-outline btn-sm" onclick="addCotItem(3)">+ Herramienta</button>
-        <button class="btn btn-outline btn-sm" onclick="addCotItem(4)">+ Costo admin.</button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;padding:14px 16px;background:var(--surface2);border-radius:8px;border:1px dashed var(--border)">
+        <span style="font-size:11px;color:var(--text2);font-weight:600;align-self:center;text-transform:uppercase;letter-spacing:.5px;margin-right:4px">+ Agregar ítem:</span>
+        <button class="btn btn-sm" onclick="addCotItem(0)" style="background:#1F3864;color:#fff;border:none">① Mano de Obra</button>
+        <button class="btn btn-sm" onclick="addCotItem(1)" style="background:#854F0B;color:#fff;border:none">② Diarias</button>
+        <button class="btn btn-sm" onclick="addCotItem(2)" style="background:#375623;color:#fff;border:none">③ Material</button>
+        <button class="btn btn-sm" onclick="addCotItem(3)" style="background:#634B09;color:#fff;border:none">④ Herramienta</button>
+        <button class="btn btn-sm" onclick="addCotItem(4)" style="background:#555555;color:#fff;border:none">⑤ Costo</button>
       </div>
 
       <!-- RELATORIO DE VISITA TÉCNICA -->
@@ -912,13 +959,23 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
           <div style="display:flex;gap:12px;align-items:flex-start">
             <div class="step-badge">2</div>
             <div style="flex:1">
-              <div style="font-weight:600;margin-bottom:6px">Pegar el código del script</div>
-              <div style="color:var(--text2);font-size:12px;margin-bottom:8px">Borra todo y pega este código exactamente:</div>
+              <div style="font-weight:600;margin-bottom:6px">Pegar el código del script v3</div>
+              <div style="color:var(--text2);font-size:12px;margin-bottom:8px">Borra todo (Ctrl+A) y pega este código actualizado:</div>
               <div style="position:relative">
-                <div class="code-block" id="apps-script-code" style="font-size:10.5px;max-height:280px;overflow-y:auto">
-<span class="cm">// TYC Servicios — Drive Sync Backend</span>
+                <div class="code-block" id="apps-script-code" style="font-size:10px;max-height:320px;overflow-y:auto">
+<span class="cm">// TYC Servicios — Drive Sync v3 (2026)</span>
 <span class="kw">const</span> FOLDER_ID = <span class="str">'1Z7HuRjfjWXOgjwBX9GElgXHFnqV2B9pm'</span>;
 <span class="kw">const</span> FILE_NAME  = <span class="str">'TYC_Materiales_2026.json'</span>;
+<span class="kw">const</span> LOG_NAME   = <span class="str">'TYC_SyncLog_2026.json'</span>;
+
+<span class="kw">function</span> <span class="fn">doGet</span>(e) {
+  <span class="kw">try</span> {
+    <span class="kw">const</span> list = <span class="fn">loadFromFile</span>(FILE_NAME);
+    <span class="kw">return</span> <span class="fn">buildResponse</span>({ok:<span class="kw">true</span>,productos:list,count:list.length,timestamp:<span class="kw">new</span> Date().<span class="fn">toISOString</span>()});
+  } <span class="kw">catch</span>(err) {
+    <span class="kw">return</span> <span class="fn">buildResponse</span>({ok:<span class="kw">false</span>,msg:err.message});
+  }
+}
 
 <span class="kw">function</span> <span class="fn">doPost</span>(e) {
   <span class="kw">try</span> {
@@ -926,62 +983,95 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
     <span class="kw">const</span> action = body.action;
 
     <span class="kw">if</span> (action === <span class="str">'sync_all'</span>) {
+      <span class="kw">if</span> (!body.productos || !Array.<span class="fn">isArray</span>(body.productos))
+        <span class="kw">return</span> <span class="fn">buildResponse</span>({ok:<span class="kw">false</span>,msg:<span class="str">'productos no es un array'</span>});
       <span class="fn">saveToFile</span>(body.productos, FILE_NAME);
-      <span class="kw">return</span> <span class="fn">jsonResponse</span>({ok:<span class="kw">true</span>,msg:<span class="str">'Sincronizado'</span>,count:body.productos.length});
+      <span class="fn">appendLog</span>(<span class="str">'sync_all'</span>,{count:body.productos.length});
+      <span class="kw">return</span> <span class="fn">buildResponse</span>({ok:<span class="kw">true</span>,count:body.productos.length,timestamp:<span class="kw">new</span> Date().<span class="fn">toISOString</span>()});
     }
+
     <span class="kw">if</span> (action === <span class="str">'add_product'</span>) {
       <span class="kw">const</span> list = <span class="fn">loadFromFile</span>(FILE_NAME);
-      list.<span class="fn">push</span>(body.producto);
+      <span class="kw">const</span> p    = body.producto;
+      <span class="kw">if</span> (!p || !p.name) <span class="kw">return</span> <span class="fn">buildResponse</span>({ok:<span class="kw">false</span>,msg:<span class="str">'producto inválido'</span>});
+      <span class="kw">if</span> (!p.n) p.n = list.length + 1;
+      list.<span class="fn">push</span>(p);
       <span class="fn">saveToFile</span>(list, FILE_NAME);
-      <span class="kw">return</span> <span class="fn">jsonResponse</span>({ok:<span class="kw">true</span>,msg:<span class="str">'Producto agregado'</span>,total:list.length});
+      <span class="fn">appendLog</span>(<span class="str">'add_product'</span>,{n:p.n,name:p.name});
+      <span class="kw">return</span> <span class="fn">buildResponse</span>({ok:<span class="kw">true</span>,total:list.length});
     }
+
     <span class="kw">if</span> (action === <span class="str">'update_product'</span>) {
       <span class="kw">const</span> list = <span class="fn">loadFromFile</span>(FILE_NAME);
-      <span class="kw">const</span> idx  = list.<span class="fn">findIndex</span>(p => p.n === body.producto.n);
-      <span class="kw">if</span> (idx >= <span class="str">0</span>) list[idx] = body.producto;
-      <span class="kw">else</span> list.<span class="fn">push</span>(body.producto);
+      <span class="kw">const</span> p    = body.producto;
+      <span class="kw">if</span> (!p || !p.n) <span class="kw">return</span> <span class="fn">buildResponse</span>({ok:<span class="kw">false</span>,msg:<span class="str">'falta producto.n'</span>});
+      <span class="kw">const</span> idx = list.<span class="fn">findIndex</span>(x => x.n === p.n);
+      <span class="kw">if</span> (idx >= 0) list[idx] = p; <span class="kw">else</span> list.<span class="fn">push</span>(p);
       <span class="fn">saveToFile</span>(list, FILE_NAME);
-      <span class="kw">return</span> <span class="fn">jsonResponse</span>({ok:<span class="kw">true</span>,msg:<span class="str">'Actualizado'</span>});
+      <span class="fn">appendLog</span>(<span class="str">'update_product'</span>,{n:p.n,name:p.name,price_sin:p.price_sin});
+      <span class="kw">return</span> <span class="fn">buildResponse</span>({ok:<span class="kw">true</span>});
     }
+
     <span class="kw">if</span> (action === <span class="str">'delete_product'</span>) {
       <span class="kw">let</span> list = <span class="fn">loadFromFile</span>(FILE_NAME);
-      list = list.<span class="fn">filter</span>(p => p.n !== body.n);
+      <span class="kw">const</span> found = list.<span class="fn">find</span>(x => x.n === body.n);
+      <span class="kw">if</span> (!found) <span class="kw">return</span> <span class="fn">buildResponse</span>({ok:<span class="kw">false</span>,msg:<span class="str">'Producto no encontrado'</span>});
+      list = list.<span class="fn">filter</span>(x => x.n !== body.n).<span class="fn">map</span>((x,i) => ({...x,n:i+1}));
       <span class="fn">saveToFile</span>(list, FILE_NAME);
-      <span class="kw">return</span> <span class="fn">jsonResponse</span>({ok:<span class="kw">true</span>,msg:<span class="str">'Eliminado'</span>});
+      <span class="fn">appendLog</span>(<span class="str">'delete_product'</span>,{name:found.name});
+      <span class="kw">return</span> <span class="fn">buildResponse</span>({ok:<span class="kw">true</span>,total:list.length});
     }
-    <span class="kw">return</span> <span class="fn">jsonResponse</span>({ok:<span class="kw">false</span>,msg:<span class="str">'Acción no reconocida'</span>});
+
+    <span class="kw">return</span> <span class="fn">buildResponse</span>({ok:<span class="kw">false</span>,msg:<span class="str">'Acción no reconocida: '</span>+action});
   } <span class="kw">catch</span>(err) {
-    <span class="kw">return</span> <span class="fn">jsonResponse</span>({ok:<span class="kw">false</span>,msg:err.message});
+    <span class="kw">return</span> <span class="fn">buildResponse</span>({ok:<span class="kw">false</span>,msg:err.message});
   }
 }
 
-<span class="kw">function</span> <span class="fn">doGet</span>(e) {
-  <span class="kw">const</span> list = <span class="fn">loadFromFile</span>(FILE_NAME);
-  <span class="kw">return</span> <span class="fn">jsonResponse</span>({ok:<span class="kw">true</span>,productos:list,count:list.length});
+<span class="kw">function</span> <span class="fn">buildResponse</span>(obj) {
+  <span class="kw">return</span> ContentService
+    .<span class="fn">createTextOutput</span>(JSON.<span class="fn">stringify</span>(obj))
+    .<span class="fn">setMimeType</span>(ContentService.MimeType.JSON);
 }
 
 <span class="kw">function</span> <span class="fn">saveToFile</span>(data, name) {
   <span class="kw">const</span> folder  = DriveApp.<span class="fn">getFolderById</span>(FOLDER_ID);
   <span class="kw">const</span> files   = folder.<span class="fn">getFilesByName</span>(name);
-  <span class="kw">const</span> content = JSON.<span class="fn">stringify</span>(data, <span class="kw">null</span>, <span class="str">2</span>);
+  <span class="kw">const</span> content = JSON.<span class="fn">stringify</span>(data, <span class="kw">null</span>, 2);
   <span class="kw">if</span> (files.<span class="fn">hasNext</span>()) files.<span class="fn">next</span>().<span class="fn">setContent</span>(content);
-  <span class="kw">else</span> folder.<span class="fn">createFile</span>(name, content, <span class="str">'application/json'</span>);
+  <span class="kw">else</span> folder.<span class="fn">createFile</span>(name, content, MimeType.PLAIN_TEXT);
 }
 
 <span class="kw">function</span> <span class="fn">loadFromFile</span>(name) {
-  <span class="kw">const</span> folder = DriveApp.<span class="fn">getFolderById</span>(FOLDER_ID);
-  <span class="kw">const</span> files  = folder.<span class="fn">getFilesByName</span>(name);
-  <span class="kw">if</span> (!files.<span class="fn">hasNext</span>()) <span class="kw">return</span> [];
-  <span class="kw">return</span> JSON.<span class="fn">parse</span>(files.<span class="fn">next</span>().<span class="fn">getContent</span>());
+  <span class="kw">try</span> {
+    <span class="kw">const</span> folder = DriveApp.<span class="fn">getFolderById</span>(FOLDER_ID);
+    <span class="kw">const</span> files  = folder.<span class="fn">getFilesByName</span>(name);
+    <span class="kw">if</span> (!files.<span class="fn">hasNext</span>()) <span class="kw">return</span> [];
+    <span class="kw">const</span> txt = files.<span class="fn">next</span>().<span class="fn">getBlob</span>().<span class="fn">getDataAsString</span>(<span class="str">'UTF-8'</span>);
+    <span class="kw">if</span> (!txt || txt.<span class="fn">trim</span>() === <span class="str">''</span>) <span class="kw">return</span> [];
+    <span class="kw">return</span> JSON.<span class="fn">parse</span>(txt);
+  } <span class="kw">catch</span>(e) { <span class="kw">return</span> []; }
 }
 
-<span class="kw">function</span> <span class="fn">jsonResponse</span>(obj) {
-  <span class="kw">return</span> ContentService
-    .<span class="fn">createTextOutput</span>(JSON.<span class="fn">stringify</span>(obj))
-    .<span class="fn">setMimeType</span>(ContentService.MimeType.JSON);
+<span class="kw">function</span> <span class="fn">appendLog</span>(action, details) {
+  <span class="kw">try</span> {
+    <span class="kw">const</span> log = <span class="fn">loadFromFile</span>(LOG_NAME);
+    log.<span class="fn">unshift</span>({action,details,timestamp:<span class="kw">new</span> Date().<span class="fn">toISOString</span>(),
+      fecha:Utilities.<span class="fn">formatDate</span>(<span class="kw">new</span> Date(),<span class="str">'America/Lima'</span>,<span class="str">'dd/MM/yyyy HH:mm'</span>)});
+    <span class="kw">if</span>(log.length > 200) log.<span class="fn">splice</span>(200);
+    <span class="fn">saveToFile</span>(log, LOG_NAME);
+  } <span class="kw">catch</span>(e){}
+}
+
+<span class="cm">// Ejecuta esto en el editor para probar antes de publicar:</span>
+<span class="kw">function</span> <span class="fn">testConexion</span>() {
+  <span class="kw">const</span> folder = DriveApp.<span class="fn">getFolderById</span>(FOLDER_ID);
+  <span class="kw">const</span> list   = <span class="fn">loadFromFile</span>(FILE_NAME);
+  Logger.<span class="fn">log</span>(<span class="str">'✓ Carpeta: '</span> + folder.<span class="fn">getName</span>());
+  Logger.<span class="fn">log</span>(<span class="str">'✓ Productos: '</span> + list.length);
 }
                 </div>
-                <button onclick="copiarScript()" class="btn btn-primary btn-sm" style="margin-top:8px;width:100%;justify-content:center">⧉ Copiar código</button>
+                <button onclick="copiarScript()" class="btn btn-primary btn-sm" style="margin-top:8px;width:100%;justify-content:center">⧉ Copiar código v3</button>
               </div>
             </div>
           </div>
@@ -1078,13 +1168,31 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
           <div class="form-group">
             <label class="form-label">Categoría</label>
             <select class="form-control" id="edit-cat">
-              <option>Metales y estructuras</option><option>Pintura y recubrimientos</option>
-              <option>Quimicos y solventes</option><option>Herramientas y equipos</option>
-              <option>Soldadura y consumibles</option><option>Mano de obra</option>
-              <option>Limpieza y mantenimiento</option><option>Tornilleria y fijaciones</option>
-              <option>Electrico y electronico</option><option>Madera y construccion</option>
-              <option>Seguridad y EPP</option><option>Plomeria y sanitario</option>
-              <option>Otros materiales</option>
+              <optgroup label="① Mano de Obra">
+                <option>Mano de obra</option>
+              </optgroup>
+              <optgroup label="② Diarias">
+                <option>Diarias y viaticos</option>
+              </optgroup>
+              <optgroup label="③ Materiales">
+                <option>Metales y estructuras</option>
+                <option>Pintura y recubrimientos</option>
+                <option>Quimicos y solventes</option>
+                <option>Soldadura y consumibles</option>
+                <option>Limpieza y mantenimiento</option>
+                <option>Tornilleria y fijaciones</option>
+                <option>Madera y construccion</option>
+                <option>Plomeria y sanitario</option>
+                <option>Otros materiales</option>
+              </optgroup>
+              <optgroup label="④ Herramientas">
+                <option>Herramientas y equipos</option>
+                <option>Electrico y electronico</option>
+              </optgroup>
+              <optgroup label="⑤ Costos">
+                <option>Seguridad y EPP</option>
+                <option>Costos administrativos</option>
+              </optgroup>
             </select>
           </div>
           <div class="form-group">
@@ -1162,11 +1270,67 @@ const PRODUCTOS = [{"n":1,"name":"PLANCHA LAC 3/8\"","spec":"Plancha laminada en
 
 let productos = [...PRODUCTOS];
 
+// ─── CLASIFICACIÓN POR GRUPO COTIZACIÓN ──────────────────────────
+// Cada categoría del catálogo pertenece a uno de los 5 grupos de cotización
+const GRUPO_COT = {
+  // 1. Mano de Obra
+  'Mano de obra': 0,
+  // 2. Diarias
+  'Diarias y viaticos': 1,
+  // 3. Materiales
+  'Metales y estructuras': 2,
+  'Pintura y recubrimientos': 2,
+  'Quimicos y solventes': 2,
+  'Soldadura y consumibles': 2,
+  'Limpieza y mantenimiento': 2,
+  'Tornilleria y fijaciones': 2,
+  'Madera y construccion': 2,
+  'Plomeria y sanitario': 2,
+  'Otros materiales': 2,
+  // 4. Herramientas
+  'Herramientas y equipos': 3,
+  'Electrico y electronico': 3,
+  // 5. Costos
+  'Seguridad y EPP': 4,
+  'Costos administrativos': 4,
+};
+
+// Etiquetas cortas de cada grupo para el selector en cotización
+const GRUPO_LABEL = [
+  '1. Mano de Obra',
+  '2. Diarias',
+  '3. Materiales',
+  '4. Herramientas',
+  '5. Costos'
+];
+
+// Categorías que pertenecen a cada grupo (para filtrar en el dropdown)
+const GRUPO_CATS = [
+  ['Mano de obra'],
+  ['Diarias y viaticos'],
+  ['Metales y estructuras','Pintura y recubrimientos','Quimicos y solventes',
+   'Soldadura y consumibles','Limpieza y mantenimiento','Tornilleria y fijaciones',
+   'Madera y construccion','Plomeria y sanitario','Otros materiales'],
+  ['Herramientas y equipos','Electrico y electronico'],
+  ['Seguridad y EPP','Costos administrativos'],
+];
+
 const CAT_BADGE = {
-  'Metales y estructuras':'badge-metal','Pintura y recubrimientos':'badge-paint',
-  'Quimicos y solventes':'badge-chem','Herramientas y equipos':'badge-tool',
-  'Soldadura y consumibles':'badge-weld','Mano de obra':'badge-mo',
-  'Limpieza y mantenimiento':'badge-clean'
+  'Mano de obra':'badge-mo',
+  'Diarias y viaticos':'badge-mo',
+  'Metales y estructuras':'badge-metal',
+  'Pintura y recubrimientos':'badge-paint',
+  'Quimicos y solventes':'badge-chem',
+  'Herramientas y equipos':'badge-tool',
+  'Electrico y electronico':'badge-tool',
+  'Soldadura y consumibles':'badge-weld',
+  'Limpieza y mantenimiento':'badge-clean',
+  'Tornilleria y fijaciones':'badge-metal',
+  'Madera y construccion':'badge-clean',
+  'Plomeria y sanitario':'badge-chem',
+  'Seguridad y EPP':'badge-weld',
+  'Costos administrativos':'badge-other',
+  'Otros materiales':'badge-other',
 };
 
 const COT_SECTIONS = [
@@ -1176,6 +1340,21 @@ const COT_SECTIONS = [
   {label:'4. Herramientas y equipos', items:[]},
   {label:'5. Costos administrativos', items:[]},
 ];
+
+function filtrarPorGrupo(g){
+  // Update pill active state
+  ['all','0','1','2','3','4'].forEach(id=>{
+    const el = document.getElementById('pill-'+(id==='all'?'all':id));
+    if(el) el.classList.remove('active');
+  });
+  const activeId = g==='' ? 'pill-all' : 'pill-'+g;
+  const activeEl = document.getElementById(activeId);
+  if(activeEl) activeEl.classList.add('active');
+  // Set grupo filter select and re-filter
+  const sel = document.getElementById('mat-grupo-filter');
+  if(sel){ sel.value = g; }
+  filtrarMateriales();
+}
 
 function fmt(n){return'S/ '+parseFloat(n||0).toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2})}
 function fmtN(n){return parseFloat(n||0).toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2})}
@@ -1230,12 +1409,18 @@ function getBadge(cat){
 }
 
 function filtrarMateriales(){
-  const q = document.getElementById('mat-search').value.toLowerCase();
-  const cat = document.getElementById('mat-cat-filter').value;
-  const prov = document.getElementById('mat-prov-filter').value;
+  const q     = document.getElementById('mat-search').value.toLowerCase();
+  const cat   = document.getElementById('mat-cat-filter').value;
+  const prov  = document.getElementById('mat-prov-filter').value;
+  const grupoEl = document.getElementById('mat-grupo-filter');
+  const grupo = grupoEl ? grupoEl.value : '';
   const filtered = productos.filter(p=>{
     const txt = (p.name+p.spec+p.prov+p.doc+p.obs).toLowerCase();
-    return txt.includes(q) && (!cat||p.cat===cat) && (!prov||p.prov===prov);
+    const matchQ    = txt.includes(q);
+    const matchCat  = !cat  || p.cat === cat;
+    const matchProv = !prov || p.prov === prov;
+    const matchGrup = grupo === '' || (GRUPO_COT[p.cat] !== undefined ? String(GRUPO_COT[p.cat]) === grupo : grupo === '2');
+    return matchQ && matchCat && matchProv && matchGrup;
   });
   renderTable(filtered);
 }
@@ -1251,18 +1436,30 @@ function renderTable(list){
   const tbody = document.getElementById('mat-tbody');
   document.getElementById('mat-count').textContent = list.length;
   if(!list.length){
-    tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">○</div><div class="empty-text">No se encontraron productos</div></div></td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="empty-icon">○</div><div class="empty-text">No se encontraron productos</div></div></td></tr>`;
     document.getElementById('mat-footer').textContent = '0 productos';
     return;
   }
-  tbody.innerHTML = list.map(p=>`
+  // Group colors
+  const grupoColors = ['#1F3864','#854F0B','#375623','#634B09','#555555'];
+  const grupoAbrev  = ['① M.O.','② Diar.','③ Mat.','④ Herr.','⑤ Costo'];
+  tbody.innerHTML = list.map(p=>{
+    const gi = GRUPO_COT[p.cat] !== undefined ? GRUPO_COT[p.cat] : 2;
+    const gc = grupoColors[gi];
+    const ga = grupoAbrev[gi];
+    return `
     <tr id="row-${p.n}">
       <td class="mono" style="color:var(--text3)">${p.n}</td>
       <td>
         <div style="font-weight:500;font-size:13px">${p.name}</div>
         <div style="font-size:11px;color:var(--text3)">${p.spec}</div>
       </td>
-      <td>${getBadge(p.cat)}</td>
+      <td>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <span style="display:inline-block;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:700;background:${gc};color:#fff;letter-spacing:.3px">${ga}</span>
+          ${getBadge(p.cat)}
+        </div>
+      </td>
       <td class="mono" style="font-size:11px">${p.unit}</td>
       <td class="num" id="td-sin-${p.n}">${fmtN(p.price_sin)}</td>
       <td class="num green" id="td-con-${p.n}">${fmtN(p.price_con)}</td>
@@ -1271,11 +1468,12 @@ function renderTable(list){
       <td>
         <div style="display:flex;gap:5px">
           <button class="btn btn-outline btn-sm" onclick="verDetalle(${p.n-1})" title="Ver detalles">Ver</button>
-          <button class="btn btn-sm" style="background:var(--gold);color:#fff;border:none" onclick="editarProducto(${p.n-1})" title="Editar precios y datos">✎ Editar</button>
-          <button class="btn btn-success btn-sm" onclick="addFromList(${p.n-1})" title="Agregar a cotización">+</button>
+          <button class="btn btn-sm" style="background:var(--gold);color:#fff;border:none" onclick="editarProducto(${p.n-1})" title="Editar">✎</button>
+          <button class="btn btn-success btn-sm" onclick="addFromList(${p.n-1})" title="Agregar a sección ${ga}">+</button>
         </div>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
   document.getElementById('mat-footer').textContent = `Mostrando ${list.length} de ${productos.length} productos`;
   attachInlineEdits();
 }
@@ -1320,13 +1518,9 @@ function verDetalle(idx){
 
 function addFromList(idx){
   const p = productos[idx];
-  const cat = p.cat;
-  let sec = 2;
-  if(cat==='Mano de obra') sec=0;
-  else if(cat==='Herramientas y equipos') sec=3;
-  else if(cat==='Limpieza y mantenimiento') sec=4;
-  COT_SECTIONS[sec].items.push({desc:p.name,spec:p.spec,unit:p.unit,qty:1,costo:p.price_sin,margin:null});
-  showNotif(`"${p.name}" agregado a cotización`);
+  const sec = (GRUPO_COT[p.cat] !== undefined) ? GRUPO_COT[p.cat] : 2;
+  COT_SECTIONS[sec].items.push({desc:p.name,spec:p.spec,unit:p.unit,qty:1,costo:p.price_sin,margin:null,_pi:String(idx)});
+  showNotif(`"${p.name}" agregado a → ${GRUPO_LABEL[sec]}`);
   updateDashboard();
 }
 
@@ -1527,27 +1721,73 @@ function removeCotItem(secIdx,itemIdx){
 function renderCotizacion(){
   const margin = parseInt(document.getElementById('margin-slider').value)/100;
   const container = document.getElementById('cot-sections');
+
+  // Build product options filtered by section group
+  const buildOpts = (si) => {
+    const allowedCats = GRUPO_CATS[si];
+    // Products matching this section's categories
+    const matching = productos.filter(p => allowedCats.includes(p.cat));
+    // Products not matching (for manual override)
+    const others   = productos.filter(p => !allowedCats.includes(p.cat));
+
+    let opts = '<option value="">— Seleccionar de ' + GRUPO_LABEL[si] + ' —</option>';
+    if(matching.length){
+      opts += '<optgroup label="' + GRUPO_LABEL[si] + ' (' + matching.length + ' productos)">';
+      matching.forEach((p,_) => {
+        const pi = productos.indexOf(p);
+        opts += `<option value="${pi}">${p.name}${p.spec?' — '+p.spec.slice(0,30):''}</option>`;
+      });
+      opts += '</optgroup>';
+    }
+    if(others.length){
+      opts += '<optgroup label="— Otros (fuera de esta sección) —">';
+      others.forEach((p,_) => {
+        const pi = productos.indexOf(p);
+        opts += `<option value="${pi}" style="color:var(--text3)">${p.name}</option>`;
+      });
+      opts += '</optgroup>';
+    }
+    return opts;
+  };
+
   container.innerHTML = COT_SECTIONS.map((sec,si)=>{
     if(!sec.items.length) return '';
-    const prodOptions = '<option value="">— Seleccionar material —</option>'+productos.map((p,pi)=>`<option value="${pi}">${p.name}</option>`).join('');
+    const prodOpts = buildOpts(si);
     const rows = sec.items.map((item,ii)=>{
       const m = item.margin !== null ? item.margin : margin;
       const venta = item.costo*(1+m);
       const sub = item.qty*venta;
-      const subIGV = sub*1.18;
+      // Build options with selected
+      const optsWithSel = prodOpts.replace(
+        `value="${item._pi}"`,
+        `value="${item._pi}" selected`
+      );
       return `<tr>
-        <td>
-          <select style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:11px;background:var(--yellow)" 
+        <td style="min-width:220px">
+          <select style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:11px;background:var(--yellow)"
             onchange="selectMatCot(${si},${ii},this.value)">
-            ${prodOptions.replace(`value="${item._pi}"`,`value="${item._pi}" selected`)}
+            ${optsWithSel}
           </select>
+          <input type="text" value="${item.desc||''}" placeholder="o escribe descripción libre..."
+            style="width:100%;margin-top:3px;padding:4px 8px;border:1px solid var(--border2);border-radius:5px;font-size:10px;background:#fff;color:var(--text)"
+            oninput="cotItem(${si},${ii},'desc',this.value)">
         </td>
-        <td><input type="text" value="${item.spec||''}" placeholder="especificación" style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:11px;background:var(--yellow)" oninput="cotItem(${si},${ii},'spec',this.value)"></td>
-        <td><input type="text" value="${item.unit||'und'}" style="width:55px;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:11px;background:var(--yellow);text-align:center" oninput="cotItem(${si},${ii},'unit',this.value)"></td>
-        <td><input type="number" value="${item.qty}" min="0" step="0.5" style="width:60px;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:11px;background:var(--yellow);text-align:center" oninput="cotItem(${si},${ii},'qty',parseFloat(this.value)||0)"></td>
-        <td><input type="number" value="${item.costo}" min="0" step="0.01" style="width:80px;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:11px;font-family:'IBM Plex Mono',monospace;background:var(--yellow)" oninput="cotItem(${si},${ii},'costo',parseFloat(this.value)||0)"></td>
+        <td><input type="text" value="${item.spec||''}" placeholder="especificación"
+          style="width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:11px;background:var(--yellow)"
+          oninput="cotItem(${si},${ii},'spec',this.value)"></td>
+        <td><input type="text" value="${item.unit||'und'}"
+          style="width:55px;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:11px;background:var(--yellow);text-align:center"
+          oninput="cotItem(${si},${ii},'unit',this.value)"></td>
+        <td><input type="number" value="${item.qty}" min="0" step="0.5"
+          style="width:60px;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:11px;background:var(--yellow);text-align:center"
+          oninput="cotItem(${si},${ii},'qty',parseFloat(this.value)||0)"></td>
+        <td><input type="number" value="${item.costo}" min="0" step="0.01"
+          style="width:80px;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:11px;font-family:'IBM Plex Mono',monospace;background:var(--yellow)"
+          oninput="cotItem(${si},${ii},'costo',parseFloat(this.value)||0)"></td>
         <td style="text-align:center">
-          <input type="number" value="${Math.round(m*100)}" min="0" max="200" step="1" style="width:55px;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:11px;background:var(--yellow);text-align:center" oninput="cotItem(${si},${ii},'margin',parseInt(this.value)/100)">%
+          <input type="number" value="${Math.round(m*100)}" min="0" max="200" step="1"
+            style="width:55px;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:11px;background:var(--yellow);text-align:center"
+            oninput="cotItem(${si},${ii},'margin',parseInt(this.value)/100)">%
         </td>
         <td class="mono" style="text-align:right;font-size:12px">${fmtN(venta)}</td>
         <td class="mono" style="text-align:right;font-size:12px;font-weight:600;color:var(--green)">${fmtN(sub)}</td>
@@ -1558,17 +1798,23 @@ function renderCotizacion(){
       const m = item.margin!==null?item.margin:margin;
       return a+item.qty*item.costo*(1+m);
     },0);
-    return `<div class="section-header">${sec.label}</div>
+    // Section color accent per group
+    const secColors = ['#1F3864','#854F0B','#375623','#634B09','#555555'];
+    const secColor = secColors[si]||'var(--accent)';
+    return `<div class="section-header" style="background:${secColor};color:#fff;border-radius:7px 7px 0 0;padding:10px 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.3px;display:flex;align-items:center;justify-content:space-between">
+      <span>${sec.label}</span>
+      <span style="opacity:.7;font-size:11px">${sec.items.length} ítem${sec.items.length!==1?'s':''}</span>
+    </div>
     <div class="section-table">
       <table><thead><tr>
-        <th style="width:200px">Descripción</th><th>Especificación</th>
+        <th style="width:220px">Descripción / Producto</th><th>Especificación</th>
         <th style="width:60px">Und.</th><th style="width:60px">Cant.</th>
         <th style="width:90px">Costo S/</th><th style="width:70px">Margen</th>
         <th style="width:90px;text-align:right">P. Venta</th>
         <th style="width:90px;text-align:right">Subtotal</th><th style="width:40px"></th>
       </tr></thead><tbody>${rows}</tbody></table>
     </div>
-    <div class="section-total"><span>${sec.label.split('—')[0].trim()}</span><span>${fmt(secSub)}</span></div>`;
+    <div class="section-total" style="border-top:2px solid ${secColor}"><span>${GRUPO_LABEL[si]}</span><span>${fmt(secSub)}</span></div>`;
   }).join('');
   recalcTotals();
 }
@@ -2452,47 +2698,75 @@ function abrirDrive(){
 }
 
 function copiarScript(){
-  const code = `// TYC Servicios — Drive Sync Backend
+  const code = `// TYC Servicios — Drive Sync v3 (2026)
 const FOLDER_ID = '1Z7HuRjfjWXOgjwBX9GElgXHFnqV2B9pm';
 const FILE_NAME  = 'TYC_Materiales_2026.json';
+const LOG_NAME   = 'TYC_SyncLog_2026.json';
+
+function doGet(e) {
+  try {
+    const list = loadFromFile(FILE_NAME);
+    return buildResponse({ok:true, productos:list, count:list.length, timestamp:new Date().toISOString()});
+  } catch(err) {
+    return buildResponse({ok:false, msg:err.message});
+  }
+}
 
 function doPost(e) {
   try {
     const body   = JSON.parse(e.postData.contents);
     const action = body.action;
+
     if (action === 'sync_all') {
+      if (!body.productos || !Array.isArray(body.productos))
+        return buildResponse({ok:false, msg:'productos no es un array'});
       saveToFile(body.productos, FILE_NAME);
-      return jsonResponse({ok:true,msg:'Sincronizado',count:body.productos.length});
+      appendLog('sync_all', {count:body.productos.length});
+      return buildResponse({ok:true, count:body.productos.length, timestamp:new Date().toISOString()});
     }
+
     if (action === 'add_product') {
       const list = loadFromFile(FILE_NAME);
-      list.push(body.producto);
+      const p    = body.producto;
+      if (!p || !p.name) return buildResponse({ok:false, msg:'producto invalido'});
+      if (!p.n) p.n = list.length + 1;
+      list.push(p);
       saveToFile(list, FILE_NAME);
-      return jsonResponse({ok:true,msg:'Producto agregado',total:list.length});
+      appendLog('add_product', {n:p.n, name:p.name});
+      return buildResponse({ok:true, total:list.length});
     }
+
     if (action === 'update_product') {
       const list = loadFromFile(FILE_NAME);
-      const idx  = list.findIndex(p => p.n === body.producto.n);
-      if (idx >= 0) list[idx] = body.producto;
-      else list.push(body.producto);
+      const p    = body.producto;
+      if (!p || !p.n) return buildResponse({ok:false, msg:'falta producto.n'});
+      const idx = list.findIndex(x => x.n === p.n);
+      if (idx >= 0) list[idx] = p; else list.push(p);
       saveToFile(list, FILE_NAME);
-      return jsonResponse({ok:true,msg:'Actualizado'});
+      appendLog('update_product', {n:p.n, name:p.name, price_sin:p.price_sin});
+      return buildResponse({ok:true});
     }
+
     if (action === 'delete_product') {
-      let list = loadFromFile(FILE_NAME);
-      list = list.filter(p => p.n !== body.n);
+      let list    = loadFromFile(FILE_NAME);
+      const found = list.find(x => x.n === body.n);
+      if (!found) return buildResponse({ok:false, msg:'Producto no encontrado'});
+      list = list.filter(x => x.n !== body.n).map((x,i) => ({...x, n:i+1}));
       saveToFile(list, FILE_NAME);
-      return jsonResponse({ok:true,msg:'Eliminado'});
+      appendLog('delete_product', {name:found.name});
+      return buildResponse({ok:true, total:list.length});
     }
-    return jsonResponse({ok:false,msg:'Accion no reconocida'});
+
+    return buildResponse({ok:false, msg:'Accion no reconocida: ' + action});
   } catch(err) {
-    return jsonResponse({ok:false,msg:err.message});
+    return buildResponse({ok:false, msg:err.message});
   }
 }
 
-function doGet(e) {
-  const list = loadFromFile(FILE_NAME);
-  return jsonResponse({ok:true,productos:list,count:list.length});
+function buildResponse(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 function saveToFile(data, name) {
@@ -2500,25 +2774,40 @@ function saveToFile(data, name) {
   const files   = folder.getFilesByName(name);
   const content = JSON.stringify(data, null, 2);
   if (files.hasNext()) files.next().setContent(content);
-  else folder.createFile(name, content, 'application/json');
+  else folder.createFile(name, content, MimeType.PLAIN_TEXT);
 }
 
 function loadFromFile(name) {
-  const folder = DriveApp.getFolderById(FOLDER_ID);
-  const files  = folder.getFilesByName(name);
-  if (!files.hasNext()) return [];
-  return JSON.parse(files.next().getContent());
+  try {
+    const folder = DriveApp.getFolderById(FOLDER_ID);
+    const files  = folder.getFilesByName(name);
+    if (!files.hasNext()) return [];
+    const txt = files.next().getBlob().getDataAsString('UTF-8');
+    if (!txt || txt.trim() === '') return [];
+    return JSON.parse(txt);
+  } catch(e) { return []; }
 }
 
-function jsonResponse(obj) {
-  return ContentService
-    .createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
+function appendLog(action, details) {
+  try {
+    const log = loadFromFile(LOG_NAME);
+    log.unshift({action, details, timestamp:new Date().toISOString(),
+      fecha:Utilities.formatDate(new Date(),'America/Lima','dd/MM/yyyy HH:mm')});
+    if(log.length > 200) log.splice(200);
+    saveToFile(log, LOG_NAME);
+  } catch(e){}
+}
+
+function testConexion() {
+  const folder = DriveApp.getFolderById(FOLDER_ID);
+  const list   = loadFromFile(FILE_NAME);
+  Logger.log('OK Carpeta: ' + folder.getName());
+  Logger.log('OK Productos: ' + list.length);
 }`;
   navigator.clipboard.writeText(code).then(()=>{
-    showNotif('Código del Apps Script copiado al portapapeles');
-    addLog('Código copiado — pégalo en el editor de Apps Script','info');
-  }).catch(()=>showNotif('Usa Ctrl+A en el bloque de código para copiar','error'));
+    showNotif('Código v3 copiado al portapapeles');
+    addLog('Código Apps Script v3 copiado','info');
+  }).catch(()=>showNotif('Usa Ctrl+A en el bloque para copiar','error'));
 }
 
 function exportarListaJSON(){
