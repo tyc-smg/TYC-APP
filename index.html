@@ -690,12 +690,40 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
 
           <!-- FOTOS -->
           <div style="border:1px solid var(--border2);border-radius:8px;overflow:hidden">
-            <div style="background:var(--surface2);padding:10px 14px;display:flex;justify-content:space-between;align-items:center">
+            <div style="background:var(--surface2);padding:10px 14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
               <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px">Fotos de la visita técnica</div>
-              <label class="btn btn-primary btn-sm" style="cursor:pointer;margin:0">
-                + Agregar fotos
-                <input type="file" id="vt-foto-input" accept="image/*" multiple style="display:none" onchange="agregarFotos(this)">
-              </label>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <!-- Control de calidad/compresión -->
+                <div style="display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:4px 10px">
+                  <span style="font-size:10px;color:var(--text2);font-weight:500;white-space:nowrap">Calidad:</span>
+                  <select id="foto-calidad" style="border:none;background:transparent;font-size:11px;color:var(--accent);font-weight:600;cursor:pointer;outline:none;padding:0">
+                    <option value="auto">Auto (recomendado)</option>
+                    <option value="0.9">Alta (0.9)</option>
+                    <option value="0.75">Media (0.75)</option>
+                    <option value="0.5">Baja (0.5)</option>
+                    <option value="0.3">Mínima (0.3)</option>
+                  </select>
+                </div>
+                <button class="btn btn-outline btn-sm" onclick="comprimirTodasLasFotos()" id="btn-comprimir-todas" style="display:none" title="Comprimir todas las fotos al límite de 5 MB">⚡ Comprimir todas</button>
+                <label class="btn btn-primary btn-sm" style="cursor:pointer;margin:0">
+                  + Agregar fotos
+                  <input type="file" id="vt-foto-input" accept="image/*" multiple style="display:none" onchange="agregarFotos(this)">
+                </label>
+              </div>
+            </div>
+            <!-- Aviso de límites -->
+            <div style="background:#FEF9EE;border-bottom:1px solid #F0D080;padding:8px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="font-size:15px">⚠</span>
+              <div style="flex:1;font-size:11px;color:#5A3E00;line-height:1.6">
+                <strong>Límites:</strong>
+                máx <strong>5 MB/foto</strong> ·
+                máx <strong>10 fotos</strong> ·
+                total recomendado <strong>&lt; 20 MB</strong> ·
+                <span style="color:var(--accent2)">Las fotos que excedan el límite se comprimen automáticamente</span>
+              </div>
+              <div id="vt-fotos-size-indicator" style="font-size:11px;font-family:'IBM Plex Mono',monospace;color:#5A3E00;white-space:nowrap;display:none">
+                0 MB / 20 MB
+              </div>
             </div>
             <div style="padding:14px">
               <div id="vt-fotos-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px">
@@ -1911,20 +1939,177 @@ function limpiarCotizacion(){
 
 function updatePreviewMeta(){}
 
-// Fotos state
-let vtFotos = []; // [{name, dataUrl, caption}]
+// ─── COMPRESIÓN DE FOTOS ─────────────────────────────────────────
+const FOTO_MAX_MB    = 5;      // max MB por foto individual
+const FOTO_MAX_COUNT = 10;     // max fotos por cotización
+const FOTO_TOTAL_MB  = 20;     // max MB total recomendado
 
-function agregarFotos(input){
-  const files = Array.from(input.files);
-  files.forEach(file=>{
-    const reader = new FileReader();
-    reader.onload = e=>{
-      vtFotos.push({name: file.name, dataUrl: e.target.result, caption: ''});
-      renderFotosGrid();
+// Comprime una imagen usando canvas. Devuelve Promise<{dataUrl, comprimida, antesMB, despuesMB}>
+function comprimirImagen(dataUrl, calidadObjetivo){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const canvas  = document.createElement('canvas');
+      const ctx     = canvas.getContext('2d');
+      let w = img.naturalWidth;
+      let h = img.naturalHeight;
+
+      // Reducir resolución si la imagen es muy grande (>2500px en algún lado)
+      const MAX_DIM = 2500;
+      if(w > MAX_DIM || h > MAX_DIM){
+        const ratio = Math.min(MAX_DIM/w, MAX_DIM/h);
+        w = Math.round(w * ratio);
+        h = Math.round(h * ratio);
+      }
+      canvas.width  = w;
+      canvas.height = h;
+      ctx.drawImage(img, 0, 0, w, h);
+
+      // Tamaño original
+      const antesMB = (dataUrl.length * 0.75 / (1024*1024));
+
+      if(calidadObjetivo === 'auto'){
+        // Comprimir progresivamente hasta que quede bajo el límite
+        const niveles = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3];
+        let resultado = null;
+        for(const q of niveles){
+          const comprimida = canvas.toDataURL('image/jpeg', q);
+          const mb = comprimida.length * 0.75 / (1024*1024);
+          resultado = {dataUrl: comprimida, comprimida: true, antesMB, despuesMB: mb, calidad: q};
+          if(mb <= FOTO_MAX_MB) break;
+        }
+        resolve(resultado);
+      } else {
+        const q = parseFloat(calidadObjetivo);
+        const comprimida = canvas.toDataURL('image/jpeg', q);
+        const despuesMB  = comprimida.length * 0.75 / (1024*1024);
+        resolve({dataUrl: comprimida, comprimida: true, antesMB, despuesMB, calidad: q});
+      }
     };
-    reader.readAsDataURL(file);
+    img.onerror = ()=> reject(new Error('No se pudo cargar la imagen'));
+    img.src = dataUrl;
   });
+}
+
+async function agregarFotos(input){
+  const files    = Array.from(input.files);
+  const calidad  = document.getElementById('foto-calidad')?.value || 'auto';
+  let rechazadas = [];
+  let procesando = 0;
+
+  for(const file of files){
+    // Validar cantidad
+    if(vtFotos.length + procesando >= FOTO_MAX_COUNT){
+      rechazadas.push(`"${file.name}" (límite de ${FOTO_MAX_COUNT} fotos alcanzado)`);
+      continue;
+    }
+
+    const fileMB = file.size / (1024 * 1024);
+
+    // Leer como dataUrl
+    const dataUrl = await new Promise(res=>{
+      const reader = new FileReader();
+      reader.onload = e=> res(e.target.result);
+      reader.readAsDataURL(file);
+    });
+
+    let fotoFinal = {name: file.name, dataUrl, caption: '', comprimida: false};
+
+    // Si supera el límite → comprimir automáticamente
+    if(fileMB > FOTO_MAX_MB){
+      try {
+        showNotif(`Comprimiendo "${file.name}" (${fileMB.toFixed(1)} MB)...`);
+        const resultado = await comprimirImagen(dataUrl, calidad);
+        fotoFinal.dataUrl    = resultado.dataUrl;
+        fotoFinal.comprimida = true;
+        fotoFinal.antesMB    = resultado.antesMB.toFixed(1);
+        fotoFinal.despuesMB  = resultado.despuesMB.toFixed(1);
+        fotoFinal.calidad    = resultado.calidad;
+
+        if(resultado.despuesMB > FOTO_MAX_MB){
+          // Aun así supera el límite — agregar con advertencia
+          addLog(`"${file.name}" comprimida a ${resultado.despuesMB.toFixed(1)} MB — aún supera el límite pero se agrega`,'warn');
+        } else {
+          addLog(`"${file.name}" comprimida: ${resultado.antesMB.toFixed(1)} MB → ${resultado.despuesMB.toFixed(1)} MB (calidad ${resultado.calidad})`,'ok');
+        }
+      } catch(err){
+        rechazadas.push(`"${file.name}" — error al comprimir: ${err.message}`);
+        continue;
+      }
+    }
+
+    procesando++;
+    vtFotos.push(fotoFinal);
+    renderFotosGrid();
+    actualizarIndicadorTamaño();
+  }
+
+  // Mostrar botón comprimir-todas si hay fotos grandes
+  const hayGrandes = vtFotos.some(f=> f.dataUrl && (f.dataUrl.length * 0.75 / (1024*1024)) > FOTO_MAX_MB);
+  const btnComp = document.getElementById('btn-comprimir-todas');
+  if(btnComp) btnComp.style.display = hayGrandes ? 'inline-flex' : 'none';
+
+  if(rechazadas.length){
+    showNotif(`${rechazadas.length} foto(s) con problema: ${rechazadas[0]}`, 'error');
+    addLog(`Fotos con problema: ${rechazadas.join(' | ')}`, 'warn');
+  } else if(procesando > 0){
+    showNotif(`${procesando} foto(s) agregada(s) correctamente`);
+  }
+
   input.value = '';
+}
+
+// Comprimir todas las fotos que superen el límite
+async function comprimirTodasLasFotos(){
+  const calidad = document.getElementById('foto-calidad')?.value || 'auto';
+  const btn = document.getElementById('btn-comprimir-todas');
+  if(btn) btn.textContent = '⟳ Comprimiendo...';
+
+  let comprimidas = 0;
+  for(let i = 0; i < vtFotos.length; i++){
+    const f    = vtFotos[i];
+    if(!f.dataUrl) continue;
+    const mb   = f.dataUrl.length * 0.75 / (1024*1024);
+    if(mb <= FOTO_MAX_MB) continue;
+    try {
+      const res = await comprimirImagen(f.dataUrl, calidad);
+      vtFotos[i].dataUrl    = res.dataUrl;
+      vtFotos[i].comprimida = true;
+      vtFotos[i].antesMB    = res.antesMB.toFixed(1);
+      vtFotos[i].despuesMB  = res.despuesMB.toFixed(1);
+      comprimidas++;
+      addLog(`Foto ${i+1} comprimida: ${res.antesMB.toFixed(1)} MB → ${res.despuesMB.toFixed(1)} MB`,'ok');
+    } catch(e){
+      addLog(`Error comprimiendo foto ${i+1}: ${e.message}`,'err');
+    }
+  }
+  renderFotosGrid();
+  actualizarIndicadorTamaño();
+  if(btn) btn.style.display = 'none';
+  showNotif(`${comprimidas} foto(s) comprimida(s) correctamente`);
+}
+
+function actualizarIndicadorTamaño(){
+  const ind = document.getElementById('vt-fotos-size-indicator');
+  if(!ind) return;
+  // Calcular tamaño total de dataUrls (base64 ~= 75% del real)
+  const totalBytes = vtFotos.reduce((acc, f)=>{
+    return acc + (f.dataUrl ? Math.round(f.dataUrl.length * 0.75) : 0);
+  }, 0);
+  const totalMB = (totalBytes / (1024 * 1024)).toFixed(1);
+  ind.style.display = vtFotos.length ? 'block' : 'none';
+  ind.textContent = totalMB + ' MB / ' + FOTO_TOTAL_MB + ' MB';
+  // Color según nivel
+  if(parseFloat(totalMB) >= FOTO_TOTAL_MB){
+    ind.style.color = '#C00000';
+    ind.style.fontWeight = '600';
+  } else if(parseFloat(totalMB) >= FOTO_TOTAL_MB * 0.7){
+    ind.style.color = '#854F0B';
+    ind.style.fontWeight = '500';
+  } else {
+    ind.style.color = '#375623';
+    ind.style.fontWeight = '400';
+  }
 }
 
 function renderFotosGrid(){
@@ -1938,19 +2123,44 @@ function renderFotosGrid(){
   }
   empty.style.display='none';
   count.style.display='block';
-  count.textContent = vtFotos.length + ' foto' + (vtFotos.length!==1?'s':'') + ' adjunta' + (vtFotos.length!==1?'s':'');
+  const totalFotos = vtFotos.length;
+  const overLimit  = totalFotos >= FOTO_MAX_COUNT;
+  count.style.color = overLimit ? 'var(--red)' : 'var(--text3)';
+  count.textContent = totalFotos + ' / ' + FOTO_MAX_COUNT + ' foto' + (totalFotos!==1?'s':'') + ' adjunta' + (totalFotos!==1?'s':'') + (overLimit?' — LÍMITE ALCANZADO':'');
+  actualizarIndicadorTamaño();
   // Re-render all cards
   grid.querySelectorAll('.foto-card').forEach(c=>c.remove());
   vtFotos.forEach((f,i)=>{
     const div = document.createElement('div');
     div.className = 'foto-card';
     div.style.cssText = 'position:relative;border:1px solid var(--border2);border-radius:8px;overflow:hidden;background:var(--surface2)';
+    // Si tiene dataUrl válido → mostrar imagen; si no → placeholder
+    const tieneImagen = f.dataUrl && f.dataUrl.startsWith('data:');
+    const fotoMB = tieneImagen ? (Math.round(f.dataUrl.length * 0.75) / (1024*1024)).toFixed(1) : null;
+    const sobreLimite = fotoMB && parseFloat(fotoMB) > FOTO_MAX_MB;
+    const imgHtml = tieneImagen
+      ? `<img src="${f.dataUrl}" alt="${f.name}"
+           style="width:100%;height:110px;object-fit:cover;display:block"
+           onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
+      : '';
+    const placeholderHtml = `<div style="display:${tieneImagen?'none':'flex'};width:100%;height:110px;background:var(--surface2);align-items:center;justify-content:center;flex-direction:column;gap:4px;color:var(--text3);font-size:11px;border-bottom:1px solid var(--border2)">
+        <span style="font-size:24px">📷</span>
+        <span>${f.name||'Sin imagen'}</span>
+        <span style="font-size:10px;color:var(--red)">Imagen no disponible</span>
+        <label style="font-size:10px;color:var(--accent2);cursor:pointer;text-decoration:underline">
+          Volver a cargar
+          <input type="file" accept="image/*" style="display:none" onchange="recargarFoto(${i},this)">
+        </label>
+      </div>`;
     div.innerHTML = `
-      <img src="${f.dataUrl}" alt="${f.name}" style="width:100%;height:110px;object-fit:cover;display:block">
+      ${imgHtml}
+      ${placeholderHtml}
       <div style="padding:6px 8px">
-        <input type="text" value="${f.caption}" placeholder="Descripción de foto..." 
+        <input type="text" value="${f.caption||''}" placeholder="Descripción de foto..."
           style="width:100%;border:none;background:transparent;font-size:11px;color:var(--text);outline:none;font-family:inherit"
           oninput="vtFotos[${i}].caption=this.value">
+        ${fotoMB ? `<div style="font-size:9px;color:${sobreLimite?'var(--red)':'var(--text3)'};margin-top:2px;font-family:'IBM Plex Mono',monospace">${fotoMB} MB${sobreLimite?' ⚠ EXCEDE LÍMITE':''}</div>` : ''}
+        ${f.comprimida ? `<div style="font-size:9px;color:var(--green);margin-top:1px">⚡ Comprimida: ${f.antesMB}→${f.despuesMB} MB</div>` : ''}
       </div>
       <button onclick="eliminarFoto(${i})" style="position:absolute;top:4px;right:4px;background:rgba(192,0,0,0.85);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0">✕</button>`;
     grid.insertBefore(div, document.getElementById('vt-fotos-empty'));
@@ -1960,6 +2170,41 @@ function renderFotosGrid(){
 function eliminarFoto(i){
   vtFotos.splice(i,1);
   renderFotosGrid();
+  actualizarIndicadorTamaño();
+}
+
+async function recargarFoto(i, input){
+  const file = input.files[0];
+  if(!file) return;
+  const fileMB  = file.size / (1024 * 1024);
+  const calidad = document.getElementById('foto-calidad')?.value || 'auto';
+
+  const dataUrl = await new Promise(res=>{
+    const reader = new FileReader();
+    reader.onload = e=> res(e.target.result);
+    reader.readAsDataURL(file);
+  });
+
+  let fotoFinal = {name: file.name, dataUrl, caption: vtFotos[i]?.caption||'', comprimida: false};
+
+  if(fileMB > FOTO_MAX_MB){
+    try {
+      showNotif(`Comprimiendo "${file.name}"...`);
+      const res = await comprimirImagen(dataUrl, calidad);
+      fotoFinal.dataUrl    = res.dataUrl;
+      fotoFinal.comprimida = true;
+      fotoFinal.antesMB    = res.antesMB.toFixed(1);
+      fotoFinal.despuesMB  = res.despuesMB.toFixed(1);
+      addLog(`Foto recargada y comprimida: ${res.antesMB.toFixed(1)} MB → ${res.despuesMB.toFixed(1)} MB`,'ok');
+    } catch(err){
+      showNotif('Error al comprimir: '+err.message,'error'); return;
+    }
+  }
+
+  vtFotos[i] = fotoFinal;
+  renderFotosGrid();
+  actualizarIndicadorTamaño();
+  showNotif('Foto recargada correctamente');
 }
 
 function limpiarRelatorio(){
@@ -2976,25 +3221,33 @@ async function subirHistorialDrive(){
   btns.forEach(id=>{ const b=document.getElementById(id); if(b) b.textContent='⟳ Subiendo...'; });
   addLog(`Subiendo historial — ${historicoCot.length} cotizaciones...`,'info');
 
-  // Strip fotos (base64) from relatorio before uploading to save space
-  // Keep only caption and name, not the dataUrl
+  // Guardar historial CON fotos (dataUrl completo)
+  // Las fotos se guardan como están — base64 completo para poder restaurarlas
   const histParaDrive = historicoCot.map(c=>{
-    const copy = Object.assign({}, c);
+    // Copia profunda de la cotización
+    const copy = JSON.parse(JSON.stringify(c));
+    // Asegurar que fotos tienen dataUrl (si vienen de local ya lo tienen)
     if(copy.relatorio && copy.relatorio.fotos){
-      copy.relatorio = Object.assign({}, copy.relatorio, {
-        fotos: copy.relatorio.fotos.map(f=>({name:f.name, caption:f.caption}))
-      });
+      copy.relatorio.fotos = copy.relatorio.fotos.map(f=>({
+        name:    f.name    || '',
+        caption: f.caption || '',
+        dataUrl: f.dataUrl || ''   // ← se guarda completo en Drive
+      }));
     }
     return copy;
   });
+
+  // Estimar tamaño — Drive acepta hasta 50MB por archivo
+  const sizeKB = Math.round(JSON.stringify(histParaDrive).length / 1024);
+  addLog(`Tamaño del historial: ${sizeKB} KB`,'info');
 
   try {
     const res = await driveRequest({action:'save_historico', historico: histParaDrive});
     if(!res.ok) throw new Error(res.msg||'Error del servidor');
     const el = document.getElementById('hist-drive-count');
     if(el) el.textContent = res.count ?? histParaDrive.length;
-    addLog(`Historial subido — ${histParaDrive.length} cotizaciones en Drive`,'ok');
-    showNotif(`Historial guardado en Drive — ${histParaDrive.length} cotizaciones`);
+    addLog(`Historial subido — ${histParaDrive.length} cotizaciones (${sizeKB} KB) en Drive`,'ok');
+    showNotif(`Historial guardado en Drive — ${histParaDrive.length} cotizaciones con fotos`);
   } catch(e){
     addLog('Error al subir historial: '+e.message,'err');
     showNotif('Error al subir historial: '+e.message,'error');
@@ -3020,41 +3273,80 @@ async function cargarHistorialDrive(){
     const res = await fetch(driveConfig.url+'?action=get_historico&t='+Date.now());
     const data = await res.json();
     if(!data.ok) throw new Error(data.msg||'Error');
-    if(!data.historico || !data.historico.length) throw new Error('No hay historial en Drive todavía');
+    if(!data.historico || !data.historico.length) throw new Error('No hay historial en Drive todavía — sube primero con "△ Subir historial"');
 
-    const remoto  = data.historico;
-    const localNums = new Set(historicoCot.map(c=>c.num));
+    const remoto = data.historico;
 
-    // Merge: add remote entries not in local
+    // Normalizar fotos de cada cotización remota
+    // Asegura que cada foto tenga dataUrl, name y caption correctos
+    remoto.forEach(rc=>{
+      if(rc.relatorio && rc.relatorio.fotos){
+        rc.relatorio.fotos = rc.relatorio.fotos.map(f=>({
+          name:    f.name    || 'foto.jpg',
+          caption: f.caption || '',
+          dataUrl: f.dataUrl || ''   // ← viene completo desde Drive
+        }));
+      }
+    });
+
+    // Merge inteligente: local + remoto, sin duplicar
     let added = 0;
+    let updated = 0;
     remoto.forEach(rc=>{
       const localIdx = historicoCot.findIndex(c=>c.num===rc.num);
       if(localIdx < 0){
         historicoCot.push(rc);
         added++;
       } else {
-        // Keep remote if it's newer
+        // Preferir el más reciente
         const localDate  = new Date(historicoCot[localIdx].savedAt||0);
         const remoteDate = new Date(rc.savedAt||0);
         if(remoteDate > localDate){
-          historicoCot[localIdx] = rc;
+          // Restaurar fotos del remoto si el local no las tiene
+          const localFotos  = (historicoCot[localIdx].relatorio||{}).fotos||[];
+          const remoteFotos = (rc.relatorio||{}).fotos||[];
+          if(remoteFotos.some(f=>f.dataUrl) && !localFotos.some(f=>f.dataUrl)){
+            historicoCot[localIdx] = rc;
+            updated++;
+          } else if(remoteDate > localDate){
+            historicoCot[localIdx] = rc;
+            updated++;
+          }
         }
       }
     });
 
-    // Sort by date descending
+    // También: restaurar fotos a cotizaciones locales que las tienen vacías
+    historicoCot.forEach((local, li)=>{
+      const remoteCot = remoto.find(r=>r.num===local.num);
+      if(!remoteCot) return;
+      const localFotos  = (local.relatorio||{}).fotos||[];
+      const remoteFotos = (remoteCot.relatorio||{}).fotos||[];
+      // Si local no tiene dataUrl pero remoto sí → restaurar fotos
+      const localSinFotos  = localFotos.every(f=>!f.dataUrl || f.dataUrl==='');
+      const remoteTieneFotos = remoteFotos.some(f=>f.dataUrl && f.dataUrl.length>10);
+      if(localSinFotos && remoteTieneFotos){
+        if(historicoCot[li].relatorio){
+          historicoCot[li].relatorio.fotos = remoteFotos;
+        }
+        updated++;
+      }
+    });
+
+    // Ordenar por fecha descendente
     historicoCot.sort((a,b)=>new Date(b.savedAt||0)-new Date(a.savedAt||0));
     saveHistorico();
 
     const el = document.getElementById('hist-drive-count');
     if(el) el.textContent = remoto.length;
 
-    addLog(`Historial cargado — ${remoto.length} en Drive, ${added} nuevas agregadas localmente`,'ok');
-    showNotif(`Historial actualizado — ${historicoCot.length} cotizaciones (${added} nuevas desde Drive)`);
+    addLog(`Historial cargado — ${remoto.length} en Drive, ${added} nuevas, ${updated} con fotos restauradas`,'ok');
+    showNotif(`Historial actualizado — ${historicoCot.length} cotizaciones (${added} nuevas, ${updated} fotos restauradas)`);
     if(document.getElementById('page-historico').classList.contains('active')) renderHistorico();
+
   } catch(e){
     addLog('Error al cargar historial: '+e.message,'err');
-    showNotif('Error al cargar historial: '+e.message,'error');
+    showNotif('Error: '+e.message,'error');
   }
   btns.forEach(id=>{
     const b = document.getElementById(id);
@@ -3253,7 +3545,19 @@ function cargarDesdeHistorico(id){
     ['fecha','tecnico','hora','ubicacion','problema','trabajos','obs'].forEach(k=>{
       const el=document.getElementById('vt-'+k); if(el) el.value=r[k]||'';
     });
-    vtFotos = (r.fotos||[]).map(f=>({...f}));
+    // Restaurar fotos — solo incluir las que tienen dataUrl válido
+    vtFotos = (r.fotos||[])
+      .filter(f => f.dataUrl && f.dataUrl.length > 10)
+      .map(f=>({
+        name:    f.name    || 'foto.jpg',
+        caption: f.caption || '',
+        dataUrl: f.dataUrl
+      }));
+    // Si hay fotos sin dataUrl (subidas sin imagen), notificar
+    const sinImagen = (r.fotos||[]).filter(f=>!f.dataUrl || f.dataUrl.length <= 10);
+    if(sinImagen.length > 0){
+      addLog(`Cotización ${c.num}: ${sinImagen.length} foto(s) sin imagen (solo descripción disponible)`,'warn');
+    }
     renderFotosGrid();
   }
   switchPage('cotizacion');
