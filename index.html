@@ -689,15 +689,15 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
           </div>
           <div class="form-group">
             <label class="form-label">Descripción del problema / condición encontrada</label>
-            <textarea class="form-control auto-height" id="vt-problema" rows="3" placeholder="Describir el estado actual de la infraestructura, fallas observadas, condiciones del ambiente, nivel de deterioro, etc." style="background:var(--yellow);resize:none;overflow:hidden;min-height:80px" oninput="autoHeight(this)"></textarea>
+            <textarea class="form-control auto-height" id="vt-problema" rows="4" placeholder="Describir el estado actual de la infraestructura, fallas observadas, condiciones del ambiente, nivel de deterioro, etc." style="background:var(--yellow);resize:vertical;min-height:120px;width:100%" oninput="autoHeight(this)" oninput="autoHeight(this)"></textarea>
           </div>
           <div class="form-group">
             <label class="form-label">Trabajos recomendados</label>
-            <textarea class="form-control auto-height" id="vt-trabajos" rows="3" placeholder="Detallar los trabajos necesarios para solucionar el problema, materiales estimados, personal requerido, plazo estimado, etc." style="background:var(--yellow);resize:none;overflow:hidden;min-height:80px" oninput="autoHeight(this)"></textarea>
+            <textarea class="form-control auto-height" id="vt-trabajos" rows="4" placeholder="Detallar los trabajos necesarios para solucionar el problema, materiales estimados, personal requerido, plazo estimado, etc." style="background:var(--yellow);resize:vertical;min-height:120px;width:100%" oninput="autoHeight(this)" oninput="autoHeight(this)"></textarea>
           </div>
           <div class="form-group">
             <label class="form-label">Observaciones adicionales</label>
-            <textarea class="form-control auto-height" id="vt-obs" rows="2" placeholder="Condiciones de acceso, riesgos identificados, equipos necesarios, restricciones horarias, etc." style="background:var(--yellow);resize:none;overflow:hidden;min-height:60px" oninput="autoHeight(this)"></textarea>
+            <textarea class="form-control auto-height" id="vt-obs" rows="3" placeholder="Condiciones de acceso, riesgos identificados, equipos necesarios, restricciones horarias, etc." style="background:var(--yellow);resize:vertical;min-height:80px;width:100%" oninput="autoHeight(this)" oninput="autoHeight(this)"></textarea>
           </div>
 
           <!-- FOTOS -->
@@ -791,9 +791,12 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
   <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;align-items:center">
     <button class="btn btn-outline" onclick="switchPage('cotizacion')">← Editar</button>
     <button class="btn btn-success" onclick="guardarEnHistorico()" style="font-weight:600">◑ Guardar en historial</button>
-    <button class="btn btn-primary" onclick="window.print()">⎙ Imprimir / PDF</button>
-    <button class="btn btn-gold" onclick="exportarCSV()">↓ Exportar CSV</button>
-    <button class="btn btn-outline" onclick="copiarParaSheets()">⊞ Copiar para Sheets</button>
+    <div style="display:flex;gap:6px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:4px">
+      <button class="btn btn-primary btn-sm" onclick="imprimirDoc()" title="Imprime en papel o en cualquier impresora conectada">⎙ Imprimir</button>
+      <button class="btn btn-sm" style="background:#C00000;color:#fff;border:none" onclick="exportarPDF()" title="Genera PDF limpio solo con datos de TYC — sin encabezado del navegador">⬇ Guardar PDF</button>
+    </div>
+    <button class="btn btn-gold btn-sm" onclick="exportarCSV()">↓ CSV</button>
+    <button class="btn btn-outline btn-sm" onclick="copiarParaSheets()">⊞ Sheets</button>
     <div id="preview-saved-badge" style="display:none;background:var(--green-light);color:var(--green);padding:5px 12px;border-radius:6px;font-size:12px;font-weight:500">✓ Guardada en historial</div>
   </div>
   <div class="print-panel" id="print-content">
@@ -2340,9 +2343,9 @@ function renderPreview(){
       </div>
       <div style="display:grid;gap:12px">
         ${vtUbic?`<div class="print-section"><div class="print-section-title">Ubicación / Área inspeccionada</div><div style="font-size:13px">${vtUbic}</div></div>`:''}
-        ${vtProblema?`<div class="print-section" style="border-left-color:var(--red)"><div class="print-section-title" style="color:var(--red)">Problema / Condición encontrada</div><div style="font-size:13px;white-space:pre-line">${vtProblema}</div></div>`:''}
-        ${vtTrabajos?`<div class="print-section" style="border-left-color:var(--green)"><div class="print-section-title" style="color:var(--green)">Trabajos recomendados</div><div style="font-size:13px;white-space:pre-line">${vtTrabajos}</div></div>`:''}
-        ${vtObsRel?`<div class="print-section"><div class="print-section-title">Observaciones adicionales</div><div style="font-size:13px;white-space:pre-line">${vtObsRel}</div></div>`:''}
+        ${vtProblema?`<div class="print-section" style="border-left-color:var(--red)"><div class="print-section-title" style="color:var(--red)">Problema / Condición encontrada</div><div style="font-size:13px;white-space:pre-wrap;word-break:break-word;line-height:1.7">${vtProblema}</div></div>`:''}
+        ${vtTrabajos?`<div class="print-section" style="border-left-color:var(--green)"><div class="print-section-title" style="color:var(--green)">Trabajos recomendados</div><div style="font-size:13px;white-space:pre-wrap;word-break:break-word;line-height:1.7">${vtTrabajos}</div></div>`:''}
+        ${vtObsRel?`<div class="print-section"><div class="print-section-title">Observaciones adicionales</div><div style="font-size:13px;white-space:pre-wrap;word-break:break-word;line-height:1.7">${vtObsRel}</div></div>`:''}
         ${vtFotos.length?`
         <div>
           <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Registro fotográfico (${vtFotos.length} foto${vtFotos.length!==1?'s':''})</div>
@@ -2447,6 +2450,52 @@ function renderPreview(){
     </div>
 
     ${relatorioBlock}`;
+}
+
+function imprimirDoc(){
+  // Standard print — browser adds its header/footer
+  window.print();
+}
+
+function exportarPDF(){
+  // Open clean popup with only TYC content — no browser chrome/title
+  const content = document.getElementById('print-content').innerHTML;
+  const logoSrc = typeof TYC_LOGO !== 'undefined' ? TYC_LOGO : '';
+  
+  // Get all styles needed
+  const styles = Array.from(document.styleSheets)
+    .map(ss=>{ try{ return Array.from(ss.cssRules).map(r=>r.cssText).join('\n'); }catch(e){return '';} })
+    .join('\n');
+
+  const win = window.open('','_blank','width=900,height=700,menubar=no,toolbar=no,location=no,status=no');
+  win.document.write(`<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>TYC Servicios — Cotización</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+${styles}
+*{box-sizing:border-box}
+body{font-family:'IBM Plex Sans',sans-serif;background:#fff;padding:24px;color:#1A1916}
+@page{margin:12mm;size:A4}
+@media print{
+  .no-print{display:none!important}
+  body{padding:0}
+  img{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+<div class="no-print" style="margin-bottom:16px;display:flex;gap:10px;align-items:center;padding:10px 14px;background:#f0f0f0;border-radius:8px">
+  <span style="font-size:13px;color:#555">Archivo listo para guardar como PDF</span>
+  <button onclick="window.print()" style="background:#1F3864;color:#fff;border:none;padding:7px 18px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:500">⬇ Guardar como PDF</button>
+  <button onclick="window.close()" style="background:#eee;border:1px solid #ccc;padding:7px 14px;border-radius:6px;font-size:13px;cursor:pointer">✕ Cerrar</button>
+  <span style="font-size:11px;color:#888;margin-left:4px">En el diálogo de impresión selecciona "Guardar como PDF" y desactiva "Encabezados y pies de página"</span>
+</div>
+${content}
+</body></html>`);
+  win.document.close();
 }
 
 function showNotif(msg, type=''){
@@ -3663,7 +3712,7 @@ function setupCotNum(){
 
 function autoHeight(el){
   el.style.height = 'auto';
-  el.style.height = Math.max(el.scrollHeight, parseInt(el.style.minHeight)||60) + 'px';
+  el.style.height = (el.scrollHeight + 4) + 'px';
 }
 
 // Init
