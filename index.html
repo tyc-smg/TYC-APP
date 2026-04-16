@@ -1833,7 +1833,6 @@ function renderCotizacion(){
       const m = item.margin !== null ? item.margin : margin;
       const venta = item.costo*(1+m);
       const sub = item.qty*venta;
-      // Build options with selected
       const optsWithSel = prodOpts.replace(
         `value="${item._pi}"`,
         `value="${item._pi}" selected`
@@ -1870,17 +1869,50 @@ function renderCotizacion(){
         <td><button class="btn btn-danger btn-sm" style="padding:3px 8px;font-size:10px" onclick="removeCotItem(${si},${ii})">✕</button></td>
       </tr>`;
     }).join('');
+
     const secSub = sec.items.reduce((a,item)=>{
       const m = item.margin!==null?item.margin:margin;
       return a+item.qty*item.costo*(1+m);
     },0);
-    // Section color accent per group
     const secColors = ['#1F3864','#854F0B','#375623','#634B09','#555555'];
-    const secColor = secColors[si]||'var(--accent)';
+    const secColor  = secColors[si]||'var(--accent)';
+
+    // ── Sección 0 (Mano de Obra): banner con resumen de trabajadores ──────
+    let moBanner = '';
+    if(si === 0){
+      const totalTrabajadores = sec.items.reduce((a,item)=>a + (item.qty||0), 0);
+      const diasPromedio = sec.items.length > 0
+        ? (sec.items.reduce((a,item)=>a+(item.qty||0),0) / sec.items.length).toFixed(1)
+        : 0;
+      const roles = [...new Set(sec.items.map(item=>(item.desc||item.spec||'—').split(' ')[0]))].slice(0,4).join(', ');
+      moBanner = `
+        <div style="background:#E6EBF4;border:1px solid #BDD7EE;border-top:none;padding:10px 16px;display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:20px">👷</span>
+            <div>
+              <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-weight:600">Total trabajadores (días-hombre)</div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;color:#1F3864">${fmtN(totalTrabajadores)} <span style="font-size:12px;font-weight:400;color:var(--text2)">días·persona</span></div>
+            </div>
+          </div>
+          <div style="width:1px;height:36px;background:var(--border2)"></div>
+          <div>
+            <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-weight:600">Valor Total M.O.</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:20px;font-weight:600;color:var(--green)">${fmt(secSub)}</div>
+          </div>
+          <div style="width:1px;height:36px;background:var(--border2)"></div>
+          <div>
+            <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;font-weight:600">Roles</div>
+            <div style="font-size:12px;color:var(--text2)">${roles||'—'}</div>
+            <div style="font-size:10px;color:var(--text3)">${sec.items.length} tipo${sec.items.length!==1?'s':''} de personal</div>
+          </div>
+        </div>`;
+    }
+
     return `<div class="section-header" style="background:${secColor};color:#fff;border-radius:7px 7px 0 0;padding:10px 16px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;letter-spacing:.3px;display:flex;align-items:center;justify-content:space-between">
       <span>${sec.label}</span>
       <span style="opacity:.7;font-size:11px">${sec.items.length} ítem${sec.items.length!==1?'s':''}</span>
     </div>
+    ${moBanner}
     <div class="section-table">
       <table><thead><tr>
         <th style="width:220px">Descripción / Producto</th><th>Especificación</th>
@@ -2293,12 +2325,35 @@ function renderPreview(){
   const moOnly   = moResult.sum   || 0;
   const diarOnly = diarResult.sum || 0;
 
+  // ── Vista previa: MO = una sola fila resumen (N° trabajadores + valor total) ──
   let moBlock = '';
-  // Mano de Obra — solo personal técnico
-  if(moResult.rows){
-    moBlock += `<tr style="background:#1F3864"><td colspan="6" style="padding:7px 10px;font-weight:600;font-size:11px;color:#fff;text-transform:uppercase;letter-spacing:.3px">① Mano de Obra — Personal Técnico</td></tr>`;
-    moBlock += moResult.rows;
-    moBlock += `<tr style="background:#E6EBF4"><td colspan="5" style="padding:5px 10px;font-size:11px;font-weight:600;color:#1F3864;text-align:right">Subtotal Mano de Obra:</td><td class="r" style="font-weight:700;color:#1F3864">${fmtN(moOnly)}</td></tr>`;
+  if(moResult.rows || moResult.sum > 0){
+    const totalDias  = COT_SECTIONS[0].items.reduce((a,item)=>a+(item.qty||0), 0);
+    const numPersonal = COT_SECTIONS[0].items.length;
+    const roles = COT_SECTIONS[0].items
+      .map(item=> (item.desc||item.spec||'—') + ' (' + item.qty + ' ' + (item.unit||'día') + ')')
+      .join(' · ');
+    moBlock = `
+      <tr style="background:#1F3864">
+        <td colspan="6" style="padding:7px 10px;font-weight:600;font-size:11px;color:#fff;text-transform:uppercase;letter-spacing:.3px">① Mano de Obra — Personal Técnico</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 10px">
+          <div style="font-weight:500;font-size:13px;color:var(--text)">Personal técnico</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:3px">${roles}</div>
+        </td>
+        <td style="font-size:11px;color:var(--text2);padding:8px 10px">${numPersonal} tipo${numPersonal!==1?'s':''} de personal</td>
+        <td class="r" style="padding:8px 10px">días·p.</td>
+        <td class="r" style="padding:8px 10px;font-weight:600">${fmtN(totalDias)}</td>
+        <td class="r" style="padding:8px 10px">—</td>
+        <td class="r" style="padding:8px 10px;font-weight:700;color:var(--green)">${fmtN(moOnly)}</td>
+      </tr>
+      <tr style="background:#E6EBF4">
+        <td colspan="5" style="padding:5px 10px;font-size:11px;font-weight:600;color:#1F3864;text-align:right">
+          Subtotal M.O. (${numPersonal} tipos · ${fmtN(totalDias)} días·persona):
+        </td>
+        <td class="r" style="font-weight:700;color:#1F3864;padding:5px 10px">${fmtN(moOnly)}</td>
+      </tr>`;
   }
   // Viáticos — separado
   let diarBlock = '';
