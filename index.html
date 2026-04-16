@@ -778,6 +778,26 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
         <div class="totals-row"><span class="t-label">Subtotal venta (s/ IGV)</span><span class="t-val" id="tot-venta">S/ 0.00</span></div>
         <div class="totals-row"><span class="t-label">IGV 18%</span><span class="t-val" id="tot-igv">S/ 0.00</span></div>
         <div class="totals-row total-final"><span class="t-label">TOTAL FINAL</span><span class="t-val" id="tot-final">S/ 0.00</span></div>
+
+        <!-- DESCUENTO -->
+        <div style="margin-top:12px;padding:12px;background:rgba(201,162,39,0.18);border-radius:8px;border:1px solid rgba(201,162,39,0.35)">
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,0.5);margin-bottom:8px">% Descuento al cliente</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+            <input type="number" id="descuento-pct" min="0" max="100" step="0.5" value="0" placeholder="0"
+              style="width:70px;padding:6px 10px;border:1px solid rgba(201,162,39,0.5);border-radius:6px;background:rgba(0,0,0,0.3);color:#FBBF24;font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;text-align:center;outline:none"
+              oninput="recalcDescuento()">
+            <span style="color:rgba(255,255,255,0.6);font-size:14px">%</span>
+            <div style="flex:1;text-align:right">
+              <div style="font-size:10px;color:rgba(255,255,255,0.4)">Ahorro</div>
+              <div id="tot-ahorro" style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:#FBBF24">S/ 0.00</div>
+            </div>
+          </div>
+          <div style="border-top:1px solid rgba(255,255,255,0.1);padding-top:8px;display:flex;justify-content:space-between;align-items:baseline">
+            <span style="font-size:10px;color:rgba(255,255,255,0.5)">Precio cliente c/IGV</span>
+            <span id="tot-con-descuento" style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;color:#4ADE80">S/ 0.00</span>
+          </div>
+        </div>
+
         <div id="row-seguridad" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(163,45,45,0.25);border-radius:8px;border:1px solid rgba(255,255,255,0.15)">
           <div style="font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,0.5);margin-bottom:7px">🛡 Opciones c/ Seguridad/HSE</div>
           <div class="totals-row" style="font-size:11px"><span class="t-label" style="color:rgba(255,255,255,0.7)">Sin Seguridad/HSE</span><span class="t-val" style="color:#FBBF24;font-size:13px" id="tot-sin-seg">S/ 0.00</span></div>
@@ -2009,6 +2029,34 @@ function calcTotalFinal(){
   return totalVenta*1.18;
 }
 
+function getDescuentoPct(){
+  const el = document.getElementById('descuento-pct');
+  if(!el) return 0;
+  const v = parseFloat(el.value);
+  return (isNaN(v)||v<0) ? 0 : Math.min(v,100);
+}
+
+function recalcDescuento(){
+  const totalFinal = window._lastTotalConIGV || 0;
+  const pct  = getDescuentoPct() / 100;
+  const ahorro = totalFinal * pct;
+  const precio = totalFinal - ahorro;
+  const elAhorro = document.getElementById('tot-ahorro');
+  const elPrecio = document.getElementById('tot-con-descuento');
+  if(elAhorro) elAhorro.textContent = fmt(ahorro);
+  if(elPrecio) elPrecio.textContent = fmt(precio);
+  // Show/hide descuento row in seguridad panel too
+  const elSinSeg = document.getElementById('tot-sin-seg');
+  const elConSeg = document.getElementById('tot-con-seg');
+  if(elSinSeg && window._lastSinSeg !== undefined){
+    const sinSegAhorro = window._lastSinSeg * pct;
+    elSinSeg.textContent = fmt(window._lastSinSeg - sinSegAhorro);
+  }
+  if(elConSeg && window._lastTotalConIGV !== undefined){
+    elConSeg.textContent = fmt(totalFinal - ahorro);
+  }
+}
+
 function recalcTotals(){
   const margin = parseInt(document.getElementById('margin-slider').value)/100;
   document.getElementById('margin-display').textContent = Math.round(margin*100)+'%';
@@ -2019,22 +2067,25 @@ function recalcTotals(){
       const sub = item.qty*item.costo*(1+m);
       totalCosto += item.qty*item.costo;
       totalVenta += sub;
-      if(si===5) segVenta += sub;  // secc 5 = Seguridad/HSE
+      if(si===5) segVenta += sub;
     });
   });
   const sinSeg = totalVenta - segVenta;
+  const totalConIGV = totalVenta * 1.18;
+  window._lastTotalConIGV = totalConIGV;
+  window._lastSinSeg = sinSeg * 1.18;
+
   document.getElementById('tot-costo').textContent = fmt(totalCosto);
   document.getElementById('tot-venta').textContent = fmt(totalVenta);
   document.getElementById('tot-igv').textContent = fmt(totalVenta*0.18);
-  document.getElementById('tot-final').textContent = fmt(totalVenta*1.18);
-  document.getElementById('stat-total-cot').textContent = fmt(totalVenta*1.18);
-  // Dual totals — sin/con seguridad
-  const elSinSeg = document.getElementById('tot-sin-seg');
-  const elConSeg = document.getElementById('tot-con-seg');
-  const rowSeg   = document.getElementById('row-seguridad');
-  if(elSinSeg) elSinSeg.textContent = fmt(sinSeg*1.18);
-  if(elConSeg) elConSeg.textContent = fmt(totalVenta*1.18);
-  if(rowSeg)   rowSeg.style.display = segVenta>0 ? 'block' : 'none';
+  document.getElementById('tot-final').textContent = fmt(totalConIGV);
+  document.getElementById('stat-total-cot').textContent = fmt(totalConIGV);
+
+  const rowSeg = document.getElementById('row-seguridad');
+  if(rowSeg) rowSeg.style.display = segVenta>0 ? 'block' : 'none';
+
+  // Recalc descuento with new totals
+  recalcDescuento();
 }
 
 function limpiarCotizacion(){
@@ -2555,7 +2606,17 @@ function renderPreview(){
         ${segOnly>0?`<div class="print-total-row" style="background:#FFF0F0"><span style="color:#A32D2D">🛡 Personal Seguridad/HSE</span><span class="pval" style="color:#A32D2D">${fmtN(segOnly)}</span></div>`:''}
         <div class="print-total-row" style="border-top:2px solid var(--border2);margin-top:2px"><span style="font-weight:600">Subtotal (sin IGV)</span><span class="pval">${fmtN(grandVenta)}</span></div>
         <div class="print-total-row"><span>IGV 18%</span><span class="pval">${fmtN(grandVenta*0.18)}</span></div>
-        <div class="print-total-row final"><span>TOTAL</span><span class="pval">S/ ${fmtN(grandVenta*1.18)}</span></div>
+        <div class="print-total-row" style="${descPct>0?'text-decoration:line-through;opacity:.5':''}"><span>Total (c/ IGV)</span><span class="pval">S/ ${fmtN(grandVenta*1.18)}</span></div>
+        ${descPct>0?`
+        <div class="print-total-row" style="background:#FFFBEA">
+          <span style="color:#854F0B">Descuento aplicado (${descPct}%)</span>
+          <span class="pval" style="color:#854F0B">− S/ ${fmtN(grandVenta*1.18*(descPct/100))}</span>
+        </div>
+        <div class="print-total-row final" style="background:#F0FFF4;border:2px solid #375623">
+          <span style="color:#375623;font-size:14px">PRECIO AL CLIENTE</span>
+          <span class="pval" style="color:#375623;font-size:18px">S/ ${fmtN(grandVenta*1.18*(1-descPct/100))}</span>
+        </div>`:`
+        <div class="print-total-row final"><span>TOTAL AL CLIENTE</span><span class="pval">S/ ${fmtN(grandVenta*1.18)}</span></div>`}
       </div>
     </div>
     ${segOnly>0?`
@@ -3605,7 +3666,10 @@ function guardarEnHistorico(){
       grandVenta += item.qty*item.costo*(1+m);
     });
   });
-  const totalConIGV = grandVenta*1.18;
+  const descPctH     = getDescuentoPct();
+  const totalConIGV  = grandVenta*1.18;
+  const ahorroH      = totalConIGV*(descPctH/100);
+  const precioCliente= totalConIGV - ahorroH;
 
   // Deep-copy sections
   const secsCopy = COT_SECTIONS.map(sec=>({
@@ -3638,6 +3702,9 @@ function guardarEnHistorico(){
     condpago,
     margin,
     totalConIGV,
+    descuento: descPctH,
+    ahorro: ahorroH,
+    precioCliente,
     estado:    'Guardada',
     secciones: secsCopy,
     relatorio,
