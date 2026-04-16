@@ -2393,6 +2393,7 @@ function renderPreview(){
   const condpago = document.getElementById('cot-condpago').value||'50% adelanto / 50% al finalizar';
   const lugar    = document.getElementById('cot-lugar').value||'—';
   const desc     = document.getElementById('cot-desc').value||'—';
+  const descPct  = getDescuentoPct();
 
   // Build items — Mano de Obra (sec 0) + Diarias (sec 1) merged under same block
   // Sections 2=Mat, 3=Herr, 4=Admin keep separate
