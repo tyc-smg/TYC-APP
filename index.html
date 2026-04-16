@@ -193,7 +193,7 @@ table.print-table td.r{text-align:right;font-family:'IBM Plex Mono',monospace}
 .inline-price-input{width:80px;padding:3px 6px;border:2px solid var(--gold);border-radius:5px;font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:600;text-align:right;outline:none;background:var(--yellow);color:var(--accent)}
 .price-changed{animation:flashRow 1.5s ease}
 @keyframes flashRow{0%{background:transparent}20%{background:#FFF8CC}80%{background:#FFF8CC}100%{background:transparent}}
-textarea.form-control{padding:10px 14px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:13px;outline:none;transition:border-color .15s;color:var(--text)}
+textarea.form-control{padding:10px 14px;border:1px solid var(--border);border-radius:7px;font-family:inherit;font-size:13px;outline:none;transition:border-color .15s;color:var(--text);display:block;box-sizing:border-box;line-height:1.6}
 textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgba(46,87,153,0.1)}
 /* Historial cotizaciones */
 .hist-card{background:var(--surface);border:1px solid var(--border2);border-radius:9px;padding:16px 20px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;transition:box-shadow .15s}
@@ -686,19 +686,19 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
           </div>
           <div class="form-group">
             <label class="form-label">Ubicación / Área inspeccionada</label>
-            <input type="text" class="form-control" id="vt-ubicacion" placeholder="Ej: Planta de molienda — nivel 2 — canaletas de drenaje sur" style="background:var(--yellow)">
+            <textarea class="form-control" id="vt-ubicacion" rows="2" data-minH="56" placeholder="Ej: Planta de molienda — nivel 2 — canaletas de drenaje sur" style="background:var(--yellow);resize:vertical;min-height:56px;width:100%;overflow:auto" oninput="autoHeight(this)"></textarea>
           </div>
           <div class="form-group">
             <label class="form-label">Descripción del problema / condición encontrada</label>
-            <textarea class="form-control auto-height" id="vt-problema" oninput="autoHeight(this)" rows="4" placeholder="Describir el estado actual de la infraestructura, fallas observadas, condiciones del ambiente, nivel de deterioro, etc." style="background:var(--yellow);resize:vertical;min-height:100px;width:100%;overflow-y:hidden" oninput="autoHeight(this)" oninput="autoHeight(this)"></textarea>
+            <textarea class="form-control" id="vt-problema" rows="4" data-minh="120" placeholder="Describir el estado actual de la infraestructura, fallas observadas, condiciones del ambiente, nivel de deterioro, etc." style="background:var(--yellow);resize:vertical;min-height:120px;width:100%;overflow:auto" oninput="autoHeight(this)"></textarea>
           </div>
           <div class="form-group">
             <label class="form-label">Trabajos recomendados</label>
-            <textarea class="form-control auto-height" id="vt-trabajos" oninput="autoHeight(this)" rows="4" placeholder="Detallar los trabajos necesarios para solucionar el problema, materiales estimados, personal requerido, plazo estimado, etc." style="background:var(--yellow);resize:vertical;min-height:100px;width:100%;overflow-y:hidden" oninput="autoHeight(this)" oninput="autoHeight(this)"></textarea>
+            <textarea class="form-control" id="vt-trabajos" rows="4" data-minh="120" placeholder="Detallar los trabajos necesarios para solucionar el problema, materiales estimados, personal requerido, plazo estimado, etc." style="background:var(--yellow);resize:vertical;min-height:120px;width:100%;overflow:auto" oninput="autoHeight(this)"></textarea>
           </div>
           <div class="form-group">
             <label class="form-label">Observaciones adicionales</label>
-            <textarea class="form-control auto-height" id="vt-obs" oninput="autoHeight(this)" rows="3" placeholder="Condiciones de acceso, riesgos identificados, equipos necesarios, restricciones horarias, etc." style="background:var(--yellow);resize:vertical;min-height:70px;width:100%;overflow-y:hidden" oninput="autoHeight(this)" oninput="autoHeight(this)"></textarea>
+            <textarea class="form-control" id="vt-obs" rows="3" data-minh="80" placeholder="Condiciones de acceso, riesgos identificados, equipos necesarios, restricciones horarias, etc." style="background:var(--yellow);resize:vertical;min-height:80px;width:100%;overflow:auto" oninput="autoHeight(this)"></textarea>
           </div>
 
           <!-- FOTOS -->
@@ -1472,7 +1472,7 @@ function switchPage(id){
   if(tab) tab.classList.add('active');
   if(id==='dashboard') updateDashboard();
   if(id==='materiales') renderMateriales();
-  if(id==='cotizacion') renderCotizacion();
+  if(id==='cotizacion'){ renderCotizacion(); setTimeout(()=>{ document.querySelectorAll('textarea.form-control').forEach(el=>autoHeight(el)); },80); }
   if(id==='preview') renderPreview();
   if(id==='historico') renderHistorico();
 }
@@ -3921,8 +3921,8 @@ function setupCotNum(){
 }
 
 function autoHeight(el){
-  el.style.height = '0px';
-  el.style.height = (el.scrollHeight + 6) + 'px';
+  el.style.height = 'auto';
+  el.style.height = Math.max(el.scrollHeight, parseInt(el.getAttribute('data-minH')||'80')) + 'px';
 }
 
 // Init
