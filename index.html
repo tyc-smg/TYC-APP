@@ -660,6 +660,7 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
         <button class="btn btn-sm" onclick="addCotItem(2)" style="background:#375623;color:#fff;border:none">③ Material</button>
         <button class="btn btn-sm" onclick="addCotItem(3)" style="background:#634B09;color:#fff;border:none">④ Herramienta</button>
         <button class="btn btn-sm" onclick="addCotItem(4)" style="background:#555555;color:#fff;border:none">⑤ Costo</button>
+        <button class="btn btn-sm" onclick="addCotItem(5)" style="background:#A32D2D;color:#fff;border:none">🛡 Seguridad/HSE</button>
       </div>
 
       <!-- RELATORIO DE VISITA TÉCNICA -->
@@ -777,6 +778,11 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
         <div class="totals-row"><span class="t-label">Subtotal venta (s/ IGV)</span><span class="t-val" id="tot-venta">S/ 0.00</span></div>
         <div class="totals-row"><span class="t-label">IGV 18%</span><span class="t-val" id="tot-igv">S/ 0.00</span></div>
         <div class="totals-row total-final"><span class="t-label">TOTAL FINAL</span><span class="t-val" id="tot-final">S/ 0.00</span></div>
+        <div id="row-seguridad" style="display:none;margin-top:10px;padding:10px 12px;background:rgba(163,45,45,0.25);border-radius:8px;border:1px solid rgba(255,255,255,0.15)">
+          <div style="font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:rgba(255,255,255,0.5);margin-bottom:7px">🛡 Opciones c/ Seguridad/HSE</div>
+          <div class="totals-row" style="font-size:11px"><span class="t-label" style="color:rgba(255,255,255,0.7)">Sin Seguridad/HSE</span><span class="t-val" style="color:#FBBF24;font-size:13px" id="tot-sin-seg">S/ 0.00</span></div>
+          <div class="totals-row" style="font-size:11px"><span class="t-label" style="color:rgba(255,255,255,0.7)">Con Seguridad/HSE</span><span class="t-val" style="color:#F87171;font-size:13px" id="tot-con-seg">S/ 0.00</span></div>
+        </div>
         <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-gold" style="width:100%;justify-content:center" onclick="switchPage('preview')">◈ Ver cotización</button>
           <button class="btn" style="width:100%;justify-content:center;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.2)" onclick="limpiarCotizacion()">✕ Nueva cotización</button>
@@ -1377,7 +1383,8 @@ const GRUPO_LABEL = [
   '2. Diarias',
   '3. Materiales',
   '4. Herramientas',
-  '5. Costos'
+  '5. Costos',
+  '6. Seguridad/HSE'
 ];
 
 // Categorías que pertenecen a cada grupo (para filtrar en el dropdown)
@@ -1415,6 +1422,7 @@ const COT_SECTIONS = [
   {label:'3. Materiales — Insumos y suministros', items:[]},
   {label:'4. Herramientas y equipos', items:[]},
   {label:'5. Costos administrativos', items:[]},
+  {label:'6. Personal Adicional — Seguridad / HSE', items:[]},
 ];
 
 function filtrarPorGrupo(g){
@@ -1874,7 +1882,7 @@ function renderCotizacion(){
       const m = item.margin!==null?item.margin:margin;
       return a+item.qty*item.costo*(1+m);
     },0);
-    const secColors = ['#1F3864','#854F0B','#375623','#634B09','#555555'];
+    const secColors = ['#1F3864','#854F0B','#375623','#634B09','#555555','#A32D2D'];
     const secColor  = secColors[si]||'var(--accent)';
 
     // ── Sección 0 (Mano de Obra): banner con resumen de trabajadores ──────
@@ -1959,19 +1967,29 @@ function calcTotalFinal(){
 function recalcTotals(){
   const margin = parseInt(document.getElementById('margin-slider').value)/100;
   document.getElementById('margin-display').textContent = Math.round(margin*100)+'%';
-  let totalCosto=0, totalVenta=0;
-  COT_SECTIONS.forEach(sec=>{
+  let totalCosto=0, totalVenta=0, segVenta=0;
+  COT_SECTIONS.forEach((sec,si)=>{
     sec.items.forEach(item=>{
       const m = item.margin!==null?item.margin:margin;
+      const sub = item.qty*item.costo*(1+m);
       totalCosto += item.qty*item.costo;
-      totalVenta += item.qty*item.costo*(1+m);
+      totalVenta += sub;
+      if(si===5) segVenta += sub;  // secc 5 = Seguridad/HSE
     });
   });
+  const sinSeg = totalVenta - segVenta;
   document.getElementById('tot-costo').textContent = fmt(totalCosto);
   document.getElementById('tot-venta').textContent = fmt(totalVenta);
   document.getElementById('tot-igv').textContent = fmt(totalVenta*0.18);
   document.getElementById('tot-final').textContent = fmt(totalVenta*1.18);
   document.getElementById('stat-total-cot').textContent = fmt(totalVenta*1.18);
+  // Dual totals — sin/con seguridad
+  const elSinSeg = document.getElementById('tot-sin-seg');
+  const elConSeg = document.getElementById('tot-con-seg');
+  const rowSeg   = document.getElementById('row-seguridad');
+  if(elSinSeg) elSinSeg.textContent = fmt(sinSeg*1.18);
+  if(elConSeg) elConSeg.textContent = fmt(totalVenta*1.18);
+  if(rowSeg)   rowSeg.style.display = segVenta>0 ? 'block' : 'none';
 }
 
 function limpiarCotizacion(){
@@ -2312,6 +2330,7 @@ function renderPreview(){
   const matResult  = buildRows(COT_SECTIONS[2], 'mat');
   const herrResult = buildRows(COT_SECTIONS[3], 'herr');
   const adminResult= buildRows(COT_SECTIONS[4], 'admin');
+  const segResult  = buildRows(COT_SECTIONS[5], 'seg');
 
   const moTotal = (moResult.sum||0) + (diarResult.sum||0); // total combinado para referencia
 
@@ -2324,6 +2343,8 @@ function renderPreview(){
   // Build table rows — MO and Viáticos as separate sections with own subtotals
   const moOnly   = moResult.sum   || 0;
   const diarOnly = diarResult.sum || 0;
+  const segOnly  = segResult.sum  || 0;
+  const totalSinSeg = grandVenta - segOnly;
 
   // ── Vista previa: MO = una sola fila resumen (N° trabajadores + valor total) ──
   let moBlock = '';
@@ -2367,7 +2388,8 @@ function renderPreview(){
     + diarBlock
     + secBlock('③ Materiales — Insumos y suministros', '#375623', matResult)
     + secBlock('④ Herramientas y equipos',              '#634B09', herrResult)
-    + secBlock('⑤ Costos administrativos',              '#555555', adminResult);
+    + secBlock('⑤ Costos administrativos',              '#555555', adminResult)
+    + secBlock('🛡 Personal Adicional — Seguridad / HSE', '#A32D2D', segResult);
 
   // Relatorio de visita técnica
   const vtFecha    = document.getElementById('vt-fecha').value;
@@ -2485,11 +2507,25 @@ function renderPreview(){
         ${matResult&&matResult.sum?`<div class="print-total-row"><span style="color:var(--text2)">③ Materiales</span><span class="pval">${fmtN(matResult.sum)}</span></div>`:''}
         ${herrResult&&herrResult.sum?`<div class="print-total-row"><span style="color:var(--text2)">④ Herramientas</span><span class="pval">${fmtN(herrResult.sum)}</span></div>`:''}
         ${adminResult&&adminResult.sum?`<div class="print-total-row"><span style="color:var(--text2)">⑤ Costos admin.</span><span class="pval">${fmtN(adminResult.sum)}</span></div>`:''}
+        ${segOnly>0?`<div class="print-total-row" style="background:#FFF0F0"><span style="color:#A32D2D">🛡 Personal Seguridad/HSE</span><span class="pval" style="color:#A32D2D">${fmtN(segOnly)}</span></div>`:''}
         <div class="print-total-row" style="border-top:2px solid var(--border2);margin-top:2px"><span style="font-weight:600">Subtotal (sin IGV)</span><span class="pval">${fmtN(grandVenta)}</span></div>
         <div class="print-total-row"><span>IGV 18%</span><span class="pval">${fmtN(grandVenta*0.18)}</span></div>
         <div class="print-total-row final"><span>TOTAL</span><span class="pval">S/ ${fmtN(grandVenta*1.18)}</span></div>
       </div>
     </div>
+    ${segOnly>0?`
+    <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="background:#FFF8F0;border:2px solid #C9A227;border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:10px;font-weight:600;color:#854F0B;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">⊘ Sin Personal Seguridad/HSE</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;color:#854F0B;margin-bottom:2px">${fmtN(totalSinSeg*1.18)}</div>
+        <div style="font-size:10px;color:var(--text3)">c/ IGV · sin Seguridad/HSE</div>
+      </div>
+      <div style="background:#FEF0F0;border:2px solid #A32D2D;border-radius:10px;padding:14px;text-align:center">
+        <div style="font-size:10px;font-weight:600;color:#A32D2D;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🛡 Con Personal Seguridad/HSE</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;color:#A32D2D;margin-bottom:2px">${fmtN(grandVenta*1.18)}</div>
+        <div style="font-size:10px;color:var(--text3)">c/ IGV · incluye Seguridad/HSE</div>
+      </div>
+    </div>`:''}
 
     <div style="margin-top:20px;padding:12px 16px;background:var(--surface2);border-radius:8px;font-size:11px;color:var(--text3)">
       <strong style="color:var(--text2)">Condiciones generales:</strong>
