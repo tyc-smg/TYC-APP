@@ -1396,6 +1396,7 @@ const GRUPO_CATS = [
    'Madera y construccion','Plomeria y sanitario','Otros materiales'],
   ['Herramientas y equipos','Electrico y electronico'],
   ['Seguridad y EPP','Costos administrativos'],
+  ['Seguridad y EPP','Mano de obra'],  // idx 5 = Seguridad/HSE (personal adicional)
 ];
 
 const CAT_BADGE = {
@@ -1792,8 +1793,18 @@ function limpiarFormNuevo(){
 }
 
 function addCotItem(secIdx){
-  COT_SECTIONS[secIdx].items.push({desc:'',spec:'',unit:'und',qty:1,costo:0,margin:null});
+  // Guard: ensure section exists
+  if(secIdx < 0 || secIdx >= COT_SECTIONS.length){
+    showNotif('Sección no válida','error');
+    return;
+  }
+  COT_SECTIONS[secIdx].items.push({desc:'',spec:'',unit:'und',qty:1,costo:0,margin:null,_pi:''});
   renderCotizacion();
+  // Scroll to newly added section
+  setTimeout(()=>{
+    const sections = document.getElementById('cot-sections');
+    if(sections) sections.scrollIntoView({behavior:'smooth',block:'end'});
+  },100);
 }
 
 function removeCotItem(secIdx,itemIdx){
@@ -1808,16 +1819,50 @@ function renderCotizacion(){
 
   // Build product options filtered by section group
   const buildOpts = (si) => {
-    const allowedCats = GRUPO_CATS[si];
-    // Products matching this section's categories
-    const matching = productos.filter(p => allowedCats.includes(p.cat));
-    // Products not matching (for manual override)
-    const others   = productos.filter(p => !allowedCats.includes(p.cat));
+    const labelSi  = GRUPO_LABEL[si] || ('Sección '+(si+1));
+    const allowedCats = (GRUPO_CATS && GRUPO_CATS[si]) ? GRUPO_CATS[si] : [];
 
-    let opts = '<option value="">— Seleccionar de ' + GRUPO_LABEL[si] + ' —</option>';
+    // Section 5 (Seguridad/HSE): show MO products first + all others
+    // Section 0 (MO): show MO products first
+    // Others: filter by category, rest as "otros"
+    let matching, others;
+    if(allowedCats.length === 0){
+      // No filter — show all as matching
+      matching = productos;
+      others   = [];
+    } else {
+      matching = productos.filter(p => allowedCats.includes(p.cat));
+      others   = productos.filter(p => !allowedCats.includes(p.cat));
+    }
+
+    let opts = `<option value="">— Seleccionar de ${labelSi} —</option>`;
+
+    // For Seguridad/HSE (si=5): show Mano de obra category prominently
+    if(si === 5){
+      const moProds = productos.filter(p=>p.cat==='Mano de obra');
+      const segProds = productos.filter(p=>p.cat==='Seguridad y EPP');
+      const restProds = productos.filter(p=>p.cat!=='Mano de obra' && p.cat!=='Seguridad y EPP');
+      if(moProds.length){
+        opts += `<optgroup label="Mano de Obra / Personal (${moProds.length})">`;
+        moProds.forEach(p=>{ const pi=productos.indexOf(p); opts+=`<option value="${pi}">${p.name}${p.spec?' — '+p.spec.slice(0,30):''}</option>`; });
+        opts += '</optgroup>';
+      }
+      if(segProds.length){
+        opts += `<optgroup label="Seguridad y EPP (${segProds.length})">`;
+        segProds.forEach(p=>{ const pi=productos.indexOf(p); opts+=`<option value="${pi}">${p.name}${p.spec?' — '+p.spec.slice(0,30):''}</option>`; });
+        opts += '</optgroup>';
+      }
+      if(restProds.length){
+        opts += `<optgroup label="— Otros —">`;
+        restProds.forEach(p=>{ const pi=productos.indexOf(p); opts+=`<option value="${pi}" style="color:var(--text3)">${p.name}</option>`; });
+        opts += '</optgroup>';
+      }
+      return opts;
+    }
+
     if(matching.length){
-      opts += '<optgroup label="' + GRUPO_LABEL[si] + ' (' + matching.length + ' productos)">';
-      matching.forEach((p,_) => {
+      opts += `<optgroup label="${labelSi} (${matching.length} productos)">`;
+      matching.forEach(p=>{
         const pi = productos.indexOf(p);
         opts += `<option value="${pi}">${p.name}${p.spec?' — '+p.spec.slice(0,30):''}</option>`;
       });
@@ -1825,7 +1870,7 @@ function renderCotizacion(){
     }
     if(others.length){
       opts += '<optgroup label="— Otros (fuera de esta sección) —">';
-      others.forEach((p,_) => {
+      others.forEach(p=>{
         const pi = productos.indexOf(p);
         opts += `<option value="${pi}" style="color:var(--text3)">${p.name}</option>`;
       });
@@ -1930,7 +1975,7 @@ function renderCotizacion(){
         <th style="width:90px;text-align:right">Subtotal</th><th style="width:40px"></th>
       </tr></thead><tbody>${rows}</tbody></table>
     </div>
-    <div class="section-total" style="border-top:2px solid ${secColor}"><span>${GRUPO_LABEL[si]}</span><span>${fmt(secSub)}</span></div>`;
+    <div class="section-total" style="border-top:2px solid ${secColor}"><span>${GRUPO_LABEL[si]||sec.label}</span><span>${fmt(secSub)}</span></div>`;
   }).join('');
   recalcTotals();
 }
@@ -2305,7 +2350,7 @@ function renderPreview(){
   let moVenta = 0, diariasVenta = 0, matVenta = 0, herrVenta = 0, adminVenta = 0;
 
   const buildRows = (sec, accumulator) => {
-    if(!sec.items.length) return '';
+    if(!sec || !sec.items || !sec.items.length) return {rows:'', sum:0};
     let sum = 0;
     const rows = sec.items.map(item=>{
       const m = item.margin!==null ? item.margin : margin;
