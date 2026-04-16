@@ -22,11 +22,12 @@
 body{font-family:'IBM Plex Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
 
 /* NAV */
-.nav{background:var(--accent);padding:0;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.25)}
+.nav{background:linear-gradient(135deg,#0D2447 0%,#1F3864 60%,#163060 100%);padding:0;position:sticky;top:0;z-index:100;box-shadow:0 3px 12px rgba(0,0,0,0.35),0 1px 0 rgba(201,162,39,0.4)}
 .nav-inner{display:flex;align-items:stretch;max-width:1400px;margin:0 auto}
-.nav-brand{display:flex;align-items:center;gap:12px;padding:14px 24px;border-right:1px solid rgba(255,255,255,0.1)}
-.nav-brand .logo{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:18px;color:#fff;letter-spacing:-0.5px}
-.nav-brand .tagline{font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:1px;text-transform:uppercase}
+.nav-brand{display:flex;align-items:center;gap:0;padding:0;border-right:1px solid rgba(255,255,255,0.12);min-width:220px;background:rgba(0,0,0,0.15);position:relative;overflow:hidden}
+.nav-brand::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:var(--gold)}
+.nav-brand .logo{font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:16px;color:#fff;letter-spacing:-0.5px}
+.nav-brand .tagline{font-size:9px;color:rgba(255,255,255,0.45);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px}
 .nav-tabs{display:flex;flex:1;overflow-x:auto}
 .nav-tab{display:flex;align-items:center;gap:8px;padding:14px 20px;color:rgba(255,255,255,0.6);font-size:13px;font-weight:500;cursor:pointer;border-bottom:3px solid transparent;transition:all .15s;white-space:nowrap;border:none;background:none;text-transform:uppercase;letter-spacing:.5px}
 .nav-tab:hover{color:#fff;background:rgba(255,255,255,0.07)}
@@ -244,11 +245,14 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
 <!-- NAV -->
 <nav class="nav">
   <div class="nav-inner">
-    <div class="nav-brand" style="gap:10px">
-      <img id="nav-logo-img" alt="TYC" style="height:38px;width:auto;object-fit:contain;filter:brightness(0) invert(1);display:block">
-      <div>
+    <div class="nav-brand">
+      <div id="nav-logo-wrap" style="width:64px;height:56px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.06);border-right:1px solid rgba(255,255,255,0.08);flex-shrink:0">
+        <img id="nav-logo-img" alt="TYC" style="width:48px;height:48px;object-fit:contain;display:block">
+      </div>
+      <div style="padding:10px 16px">
         <div class="logo">TYC</div>
         <div class="tagline">Servicios 2026</div>
+        <div style="font-size:8px;color:var(--gold);letter-spacing:.5px;margin-top:1px">SISTEMA DE GESTIÓN</div>
       </div>
     </div>
     <!-- Drive sync indicator -->
@@ -685,15 +689,15 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
           </div>
           <div class="form-group">
             <label class="form-label">Descripción del problema / condición encontrada</label>
-            <textarea class="form-control" id="vt-problema" rows="3" placeholder="Describir el estado actual de la infraestructura, fallas observadas, condiciones del ambiente, nivel de deterioro, etc." style="background:var(--yellow);resize:vertical"></textarea>
+            <textarea class="form-control auto-height" id="vt-problema" rows="3" placeholder="Describir el estado actual de la infraestructura, fallas observadas, condiciones del ambiente, nivel de deterioro, etc." style="background:var(--yellow);resize:none;overflow:hidden;min-height:80px" oninput="autoHeight(this)"></textarea>
           </div>
           <div class="form-group">
             <label class="form-label">Trabajos recomendados</label>
-            <textarea class="form-control" id="vt-trabajos" rows="3" placeholder="Detallar los trabajos necesarios para solucionar el problema, materiales estimados, personal requerido, plazo estimado, etc." style="background:var(--yellow);resize:vertical"></textarea>
+            <textarea class="form-control auto-height" id="vt-trabajos" rows="3" placeholder="Detallar los trabajos necesarios para solucionar el problema, materiales estimados, personal requerido, plazo estimado, etc." style="background:var(--yellow);resize:none;overflow:hidden;min-height:80px" oninput="autoHeight(this)"></textarea>
           </div>
           <div class="form-group">
             <label class="form-label">Observaciones adicionales</label>
-            <textarea class="form-control" id="vt-obs" rows="2" placeholder="Condiciones de acceso, riesgos identificados, equipos necesarios, restricciones horarias, etc." style="background:var(--yellow);resize:vertical"></textarea>
+            <textarea class="form-control auto-height" id="vt-obs" rows="2" placeholder="Condiciones de acceso, riesgos identificados, equipos necesarios, restricciones horarias, etc." style="background:var(--yellow);resize:none;overflow:hidden;min-height:60px" oninput="autoHeight(this)"></textarea>
           </div>
 
           <!-- FOTOS -->
@@ -2315,14 +2319,15 @@ function renderPreview(){
   const relatorioBlock = hasRelatorio ? `
     <div style="margin-top:28px;border-top:2px solid var(--accent);padding-top:20px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;flex-wrap:wrap;gap:10px">
-        <div style="display:flex;align-items:center;gap:12px">
-          <img src="${TYC_LOGO}" alt="TYC" style="height:52px;width:auto;object-fit:contain;flex-shrink:0">
+        <div style="display:flex;align-items:center;gap:14px">
+          <img src="${TYC_LOGO}" alt="TYC" style="height:56px;width:auto;object-fit:contain;flex-shrink:0;border-right:1.5px solid var(--border2);padding-right:14px">
           <div>
-            <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:14px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px">Relatorio de Visita Técnica</div>
-            <div style="font-size:11px;color:var(--text3)">TYC Servicios y Mantenimiento Generales S.R.L. — RUC 20614003546</div>
-            <div style="font-size:10px;color:var(--text3)">
+            <div style="font-family:'IBM Plex Mono',monospace;font-weight:600;font-size:13px;color:var(--accent);text-transform:uppercase;letter-spacing:.5px">Relatorio de Visita Técnica</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:2px">TYC Servicios y Mantenimiento Generales S.R.L.</div>
+            <div style="font-size:11px;color:var(--text3)">RUC: 20614003546 &nbsp;·&nbsp; Tel: +51 943 435 224</div>
+            <div style="font-size:10px;margin-top:2px;display:flex;gap:8px">
               <a href="mailto:adm@tycsmg.com" style="color:var(--accent2);text-decoration:none">adm@tycsmg.com</a>
-              &nbsp;|&nbsp;
+              <span style="color:var(--text3)">·</span>
               <a href="https://www.tycsmg.com" target="_blank" style="color:var(--accent2);text-decoration:none">www.tycsmg.com</a>
             </div>
           </div>
@@ -2356,24 +2361,24 @@ function renderPreview(){
     </div>` : '';
 
   document.getElementById('print-content').innerHTML = `
-    <div class="print-header">
-      <div class="print-company" style="display:flex;align-items:flex-start;gap:16px">
-        <img src="${TYC_LOGO}" alt="TYC Logo" style="height:72px;width:auto;object-fit:contain;flex-shrink:0">
+    <div class="print-header" style="border-bottom:3px solid var(--accent);padding-bottom:16px;margin-bottom:20px">
+      <div style="display:flex;align-items:center;gap:18px;flex:1">
+        <img src="${TYC_LOGO}" alt="TYC Logo" style="height:80px;width:auto;object-fit:contain;flex-shrink:0;border-right:2px solid var(--border2);padding-right:18px">
         <div>
-          <div class="name">TYC SERVICIOS Y MANTENIMIENTO GENERALES S.R.L.</div>
-          <div style="font-size:12px;color:var(--text2);margin-top:4px">RUC: 20614003546</div>
-          <div style="font-size:11px;color:var(--text3)">Calle Javier Pérez de Cuellar N°08, A.H. San Francisco, Paita</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px">
-            Tel: +51 943 435 224 &nbsp;|&nbsp;
-            <a href="mailto:adm@tycsmg.com" style="color:var(--accent2);text-decoration:none">adm@tycsmg.com</a> &nbsp;|&nbsp;
-            <a href="https://www.tycsmg.com" target="_blank" style="color:var(--accent2);text-decoration:none">www.tycsmg.com</a>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:600;color:var(--accent);letter-spacing:.3px">TYC SERVICIOS Y MANTENIMIENTO GENERALES S.R.L.</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:3px">RUC: 20614003546</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:1px">Calle Javier Pérez de Cuellar N°08, A.H. San Francisco, Paita</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:1px">Tel: +51 943 435 224</div>
+          <div style="font-size:11px;margin-top:2px;display:flex;gap:12px">
+            <a href="mailto:adm@tycsmg.com" style="color:var(--accent2);text-decoration:none;font-weight:500">adm@tycsmg.com</a>
+            <a href="https://www.tycsmg.com" target="_blank" style="color:var(--accent2);text-decoration:none;font-weight:500">www.tycsmg.com</a>
           </div>
         </div>
       </div>
-      <div class="print-cot-badge">
-        <div style="font-size:10px;opacity:.7;text-transform:uppercase;letter-spacing:.5px">Cotización</div>
-        <div class="cot-n">${cotNum}</div>
-        <div style="font-size:11px;opacity:.7;margin-top:4px">${fecha}</div>
+      <div class="print-cot-badge" style="min-width:130px;text-align:center">
+        <div style="font-size:9px;opacity:.7;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px">Cotización N°</div>
+        <div class="cot-n" style="font-size:18px">${cotNum}</div>
+        <div style="font-size:10px;opacity:.6;margin-top:4px">${fecha}</div>
       </div>
     </div>
 
@@ -3656,10 +3661,18 @@ function setupCotNum(){
   });
 }
 
+function autoHeight(el){
+  el.style.height = 'auto';
+  el.style.height = Math.max(el.scrollHeight, parseInt(el.style.minHeight)||60) + 'px';
+}
+
 // Init
 document.addEventListener('DOMContentLoaded', ()=>{
+  // Set nav logo
   const navLogo = document.getElementById('nav-logo-img');
   if(navLogo && typeof TYC_LOGO !== 'undefined') navLogo.src = TYC_LOGO;
+  // Init auto-height textareas
+  document.querySelectorAll('.auto-height').forEach(el=>autoHeight(el));
 });
 document.getElementById('cot-fecha').value = new Date().toISOString().slice(0,10);
 loadDriveConfig();
