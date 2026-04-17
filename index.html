@@ -4937,13 +4937,16 @@ ${proy.requisitos.filter(r=>r.ok&&r.archivo).map(r=>`<li><strong>${r.req}</stron
 
 <div class="firma-block">
   <div class="firma-box">
-    ${typeof TYC_LOGO!=='undefined'?`<img src="${TYC_LOGO}" style="max-height:50px;object-fit:contain;margin-bottom:8px"><br>`:''}
+    ${getFirmaDataUrl() ? `<div style="height:70px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:0">
+      <img src="${getFirmaDataUrl()}" style="max-height:68px;max-width:220px;object-fit:contain;display:block">
+    </div>` : `<div style="height:70px"></div>`}
     <div class="firma-line"></div>
     <div style="font-weight:700;font-size:13px">TYC SERVICIOS Y MANTENIMIENTO GENERALES S.R.L.</div>
     <div style="font-size:12px;color:#555">José Moncada Lluen — Gerente General</div>
     <div style="font-size:11px;color:#555">DNI: 03463888</div>
   </div>
   <div class="firma-box">
+    <div style="height:70px"></div>
     <div class="firma-line"></div>
     <div style="font-weight:700;font-size:13px">V°B° ADMINISTRADOR / RESPONSABLE DE SEDE</div>
     <div style="font-size:12px;color:#555">${c.cliente||'Cliente'}</div>
