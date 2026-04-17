@@ -754,6 +754,53 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
           </div>
         </div>
       </div>
+
+      <!-- ═══ FIRMA DIGITAL ═══ -->
+      <div class="card" style="margin-top:20px">
+        <div class="card-header" style="background:#1F3864;border-radius:10px 10px 0 0">
+          <span class="card-title" style="color:#fff">✍ Firma del Representante</span>
+          <span style="font-size:11px;color:rgba(255,255,255,0.6)">Opcional — aparece en la cotización</span>
+        </div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px">
+            <div class="form-group">
+              <label class="form-label">Nombre del firmante</label>
+              <input type="text" class="form-control" id="firma-nombre" value="José Moncada Lluen" style="background:var(--yellow)">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Cargo</label>
+              <input type="text" class="form-control" id="firma-cargo" value="Representante Legal" style="background:var(--yellow)">
+            </div>
+          </div>
+
+          <!-- Canvas de firma -->
+          <div style="margin-bottom:10px">
+            <label class="form-label" style="margin-bottom:6px;display:block">Firma digital <span style="font-size:10px;color:var(--text3);font-weight:400">— dibuja tu firma con el ratón o dedo</span></label>
+            <div style="position:relative;border:2px solid var(--border);border-radius:8px;overflow:hidden;background:#fff;cursor:crosshair" id="firma-wrap">
+              <canvas id="firma-canvas" width="600" height="160"
+                style="display:block;width:100%;height:160px;touch-action:none"></canvas>
+              <div id="firma-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:.35">
+                <span style="font-size:13px;color:#555;font-style:italic">Firma aquí</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+              <button class="btn btn-outline btn-sm" onclick="limpiarFirma()">✕ Limpiar firma</button>
+              <div style="display:flex;align-items:center;gap:6px;margin-left:4px">
+                <label style="font-size:11px;color:var(--text2)">Color:</label>
+                <input type="color" id="firma-color" value="#1F3864"
+                  style="width:28px;height:28px;border:none;padding:0;cursor:pointer;border-radius:4px;background:none">
+                <label style="font-size:11px;color:var(--text2)">Grosor:</label>
+                <select id="firma-grosor" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:4px">
+                  <option value="1.5">Fino</option>
+                  <option value="2.5" selected>Normal</option>
+                  <option value="4">Grueso</option>
+                </select>
+              </div>
+              <span id="firma-status" style="margin-left:auto;font-size:11px;color:var(--green);display:none">✓ Firma registrada</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- RIGHT: totals panel -->
@@ -1472,7 +1519,7 @@ function switchPage(id){
   if(tab) tab.classList.add('active');
   if(id==='dashboard') updateDashboard();
   if(id==='materiales') renderMateriales();
-  if(id==='cotizacion'){ renderCotizacion(); setTimeout(()=>{ document.querySelectorAll('textarea.form-control').forEach(el=>autoHeight(el)); },80); }
+  if(id==='cotizacion'){ renderCotizacion(); setTimeout(()=>{ document.querySelectorAll('textarea.form-control').forEach(el=>autoHeight(el)); initFirmaCanvas(); },80); }
   if(id==='preview') renderPreview();
   if(id==='historico') renderHistorico();
 }
@@ -2369,6 +2416,80 @@ async function recargarFoto(i, input){
   showNotif('Foto recargada correctamente');
 }
 
+// ─── FIRMA DIGITAL ────────────────────────────────────────────────────────
+let firmaDrawing = false;
+let firmaHasData = false;
+let firmaCtx = null;
+
+function initFirmaCanvas(){
+  const canvas = document.getElementById('firma-canvas');
+  if(!canvas || canvas._firmaInit) return;
+  canvas._firmaInit = true;
+  firmaCtx = canvas.getContext('2d');
+  firmaCtx.lineCap = 'round';
+  firmaCtx.lineJoin = 'round';
+
+  const getPos = (e)=>{
+    const r = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / r.width;
+    const scaleY = canvas.height / r.height;
+    const src = e.touches ? e.touches[0] : e;
+    return { x:(src.clientX-r.left)*scaleX, y:(src.clientY-r.top)*scaleY };
+  };
+  const startDraw = (e)=>{
+    e.preventDefault();
+    firmaDrawing = true;
+    firmaCtx.beginPath();
+    const p = getPos(e);
+    firmaCtx.moveTo(p.x, p.y);
+  };
+  const draw = (e)=>{
+    if(!firmaDrawing) return;
+    e.preventDefault();
+    const color  = document.getElementById('firma-color').value||'#1F3864';
+    const grosor = parseFloat(document.getElementById('firma-grosor').value)||2.5;
+    firmaCtx.strokeStyle = color;
+    firmaCtx.lineWidth   = grosor;
+    const p = getPos(e);
+    firmaCtx.lineTo(p.x, p.y);
+    firmaCtx.stroke();
+    firmaCtx.beginPath();
+    firmaCtx.moveTo(p.x, p.y);
+    firmaHasData = true;
+    const ph = document.getElementById('firma-placeholder');
+    if(ph) ph.style.display = 'none';
+    const st = document.getElementById('firma-status');
+    if(st) st.style.display = 'inline';
+  };
+  const endDraw = ()=>{ firmaDrawing = false; firmaCtx && firmaCtx.beginPath(); };
+
+  canvas.addEventListener('mousedown',  startDraw);
+  canvas.addEventListener('mousemove',  draw);
+  canvas.addEventListener('mouseup',    endDraw);
+  canvas.addEventListener('mouseleave', endDraw);
+  canvas.addEventListener('touchstart', startDraw, {passive:false});
+  canvas.addEventListener('touchmove',  draw,      {passive:false});
+  canvas.addEventListener('touchend',   endDraw);
+}
+
+function getFirmaDataUrl(){
+  if(!firmaHasData) return null;
+  const canvas = document.getElementById('firma-canvas');
+  return canvas ? canvas.toDataURL('image/png') : null;
+}
+
+function limpiarFirma(){
+  const canvas = document.getElementById('firma-canvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  firmaHasData = false;
+  const ph = document.getElementById('firma-placeholder');
+  if(ph) ph.style.display = 'flex';
+  const st = document.getElementById('firma-status');
+  if(st) st.style.display = 'none';
+}
+
 function limpiarRelatorio(){
   if(!confirm('¿Limpiar todo el relatorio de visita técnica?')) return;
   ['vt-fecha','vt-tecnico','vt-hora','vt-ubicacion','vt-problema','vt-trabajos','vt-obs'].forEach(id=>{
@@ -2642,12 +2763,19 @@ function renderPreview(){
 
     <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:32px;padding-top:16px;border-top:1px solid var(--border2)">
       <div style="text-align:center">
-        <div style="height:48px;border-bottom:1px solid var(--text2);margin-bottom:8px"></div>
-        <div style="font-size:12px;font-weight:600">TYC SERVICIOS Y MANTENIMIENTO GENERALES S.R.L.</div>
-        <div style="font-size:11px;color:var(--text3)">José Moncada Lluen — Representante</div>
+        ${getFirmaDataUrl() ? `
+          <div style="height:64px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:4px">
+            <img src="${getFirmaDataUrl()}" style="max-height:64px;max-width:220px;object-fit:contain">
+          </div>
+          <div style="border-top:1px solid var(--text2);padding-top:6px;margin-bottom:4px"></div>
+        ` : `
+          <div style="height:64px;border-bottom:1px solid var(--text2);margin-bottom:8px"></div>
+        `}
+        <div style="font-size:12px;font-weight:600">${document.getElementById('firma-nombre').value||'TYC SERVICIOS Y MANTENIMIENTO GENERALES S.R.L.'}</div>
+        <div style="font-size:11px;color:var(--text3)">${document.getElementById('firma-cargo').value||'Representante Legal'}</div>
       </div>
       <div style="text-align:center">
-        <div style="height:48px;border-bottom:1px solid var(--text2);margin-bottom:8px"></div>
+        <div style="height:64px;border-bottom:1px solid var(--text2);margin-bottom:8px"></div>
         <div style="font-size:12px;font-weight:600">${cliente}</div>
         <div style="font-size:11px;color:var(--text3)">Cliente — Conformidad</div>
       </div>
@@ -3671,6 +3799,9 @@ function guardarEnHistorico(){
   const totalConIGV  = grandVenta*1.18;
   const ahorroH      = totalConIGV*(descPctH/100);
   const precioCliente= totalConIGV - ahorroH;
+  const firmaData    = getFirmaDataUrl();
+  const firmaNombre  = document.getElementById('firma-nombre')?.value||'';
+  const firmaCargo   = document.getElementById('firma-cargo')?.value||'';
 
   // Deep-copy sections
   const secsCopy = COT_SECTIONS.map(sec=>({
@@ -3706,6 +3837,9 @@ function guardarEnHistorico(){
     descuento: descPctH,
     ahorro: ahorroH,
     precioCliente,
+    firma: firmaData,
+    firmaNombre,
+    firmaCargo,
     estado:    'Guardada',
     secciones: secsCopy,
     relatorio,
@@ -3848,6 +3982,33 @@ function cargarDesdeHistorico(id){
     }
     renderFotosGrid();
   }
+  // Restore firma
+  setTimeout(()=>{
+    initFirmaCanvas();
+    const elNombre = document.getElementById('firma-nombre');
+    const elCargo  = document.getElementById('firma-cargo');
+    if(elNombre) elNombre.value = c.firmaNombre||'José Moncada Lluen';
+    if(elCargo)  elCargo.value  = c.firmaCargo||'Representante Legal';
+    if(c.firma){
+      const canvas = document.getElementById('firma-canvas');
+      if(canvas){
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        img.onload = ()=>{
+          ctx.clearRect(0,0,canvas.width,canvas.height);
+          ctx.drawImage(img,0,0);
+          firmaHasData = true;
+          const ph = document.getElementById('firma-placeholder');
+          if(ph) ph.style.display='none';
+          const st = document.getElementById('firma-status');
+          if(st) st.style.display='inline';
+        };
+        img.src = c.firma;
+      }
+    } else {
+      limpiarFirma();
+    }
+  },150);
   switchPage('cotizacion');
   showNotif(`Cotización ${c.num} cargada — puedes editar y guardar de nuevo`);
 }
@@ -3930,6 +4091,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   // Set nav logo
   const navLogo = document.getElementById('nav-logo-img');
   if(navLogo && typeof TYC_LOGO !== 'undefined') navLogo.src = TYC_LOGO;
+  // Init firma canvas
+  setTimeout(initFirmaCanvas, 300);
   // Init auto-height textareas
   document.querySelectorAll('.auto-height').forEach(el=>autoHeight(el));
 });
