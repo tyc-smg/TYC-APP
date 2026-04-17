@@ -285,6 +285,9 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
       <button class="nav-tab" onclick="switchPage('drive')" data-page="drive">
         <span class="tab-icon">△</span> Drive Sync
       </button>
+      <button class="nav-tab" id="tab-proyecto" onclick="switchPage('proyecto')" data-page="proyecto" style="display:none;background:rgba(55,86,35,0.3);border-bottom:2px solid #4ADE80">
+        <span class="tab-icon">⚙</span> En Proyecto
+      </button>
     </div>
   </div>
 </nav>
@@ -927,6 +930,283 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
   </div>
   <div class="print-panel" id="print-content">
     <!-- generated -->
+  </div>
+</div>
+
+
+<!-- ═══════════════ PAGE: PROYECTO ═══════════════ -->
+<div class="page" id="page-proyecto">
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+    <button class="btn btn-outline" onclick="switchPage('historico')">← Historial</button>
+    <div style="flex:1">
+      <h2 style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:var(--accent)" id="proy-titulo">Gestión de Proyecto</h2>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px" id="proy-subtitulo">—</div>
+    </div>
+    <div id="proy-estado-badge" style="padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;background:#375623;color:#fff">Aprobada</div>
+  </div>
+
+  <!-- Tabs de fase del proyecto -->
+  <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px">
+    <button id="ptab-inicio" onclick="switchProyTab('inicio')"
+      style="flex:1;padding:10px 16px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:#1F3864;color:#fff;display:flex;align-items:center;justify-content:center;gap:6px">
+      🚀 Inicio de Operaciones
+    </button>
+    <button id="ptab-proceso" onclick="switchProyTab('proceso')"
+      style="flex:1;padding:10px 16px;font-size:12px;font-weight:500;border:none;border-left:1px solid var(--border);cursor:pointer;background:var(--surface2);color:var(--text2);display:flex;align-items:center;justify-content:center;gap:6px">
+      ⚙ En Proceso
+    </button>
+    <button id="ptab-finalizado" onclick="switchProyTab('finalizado')"
+      style="flex:1;padding:10px 16px;font-size:12px;font-weight:500;border:none;border-left:1px solid var(--border);cursor:pointer;background:var(--surface2);color:var(--text2);display:flex;align-items:center;justify-content:center;gap:6px">
+      ✓ Finalizado
+    </button>
+  </div>
+
+  <!-- ── PANEL: INICIO DE OPERACIONES ── -->
+  <div id="ppanel-inicio">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+      <!-- Documentos requeridos / SIG -->
+      <div class="card">
+        <div class="card-header" style="background:#1F3864;border-radius:10px 10px 0 0">
+          <span class="card-title" style="color:#fff">📋 Requisitos SIG del Cliente</span>
+          <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:#fff;border:none;font-size:11px" onclick="addRequisito()">+ Agregar</button>
+        </div>
+        <div class="card-body" id="proy-requisitos-lista">
+          <!-- Modelo basado en FGM-SIG-002 Molinos & CÍA -->
+          <div style="font-size:11px;color:var(--text2);margin-bottom:10px;padding:8px;background:var(--surface2);border-radius:6px">
+            <strong>Ref:</strong> FGM-SIG-002 REQUISITOS SIG — Molinos & Cía. S.A. | RUC: 20257364357
+          </div>
+          <div id="req-lista" style="display:flex;flex-direction:column;gap:6px"></div>
+        </div>
+      </div>
+
+      <!-- Archivos adjuntos / Documentación entregada -->
+      <div class="card">
+        <div class="card-header" style="background:#1F3864;border-radius:10px 10px 0 0">
+          <span class="card-title" style="color:#fff">📁 Documentos Entregados</span>
+          <label class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:#fff;border:none;font-size:11px;cursor:pointer;margin:0">
+            + Subir
+            <input type="file" multiple accept=".pdf,.doc,.docx,.xlsx,.xls,.png,.jpg,.jpeg" style="display:none" onchange="subirDocumentoProy(this)">
+          </label>
+        </div>
+        <div class="card-body" id="proy-docs-lista">
+          <div style="font-size:12px;color:var(--text3);font-style:italic;text-align:center;padding:16px">
+            Adjunta: Carta presentación, SCTR, PETS, IPERC, Plan Contingencia, EPP, Matriz Ambiental
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Carta de presentación / Info del proyecto -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-header" style="background:#0D2447;border-radius:10px 10px 0 0">
+        <span class="card-title" style="color:#fff">🏢 Datos de Inicio</span>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+          <div class="form-group">
+            <label class="form-label">Fecha de inicio</label>
+            <input type="date" class="form-control" id="proy-fecha-inicio" style="background:var(--yellow)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fecha estimada de fin</label>
+            <input type="date" class="form-control" id="proy-fecha-fin" style="background:var(--yellow)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Supervisor responsable</label>
+            <input type="text" class="form-control" id="proy-supervisor" placeholder="Nombre del supervisor" style="background:var(--yellow)">
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label class="form-label">Observaciones de inicio</label>
+            <textarea class="form-control" id="proy-obs-inicio" rows="2" style="background:var(--yellow);resize:vertical;min-height:60px" placeholder="Condiciones del contrato, acuerdos previos, requerimientos especiales del cliente..."></textarea>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="guardarProyecto()">💾 Guardar datos de inicio</button>
+        <button class="btn btn-outline" onclick="generarCartaPresentacion()" style="margin-left:8px">📄 Generar Carta de Presentación</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PANEL: EN PROCESO ── -->
+  <div id="ppanel-proceso" style="display:none">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+      <!-- Control de materiales / gastos -->
+      <div class="card">
+        <div class="card-header" style="background:#854F0B;border-radius:10px 10px 0 0">
+          <span class="card-title" style="color:#fff">📦 Control de Materiales</span>
+          <span style="font-size:11px;color:rgba(255,255,255,.7)">vs cotización</span>
+        </div>
+        <div class="card-body" style="padding-bottom:0">
+          <div style="display:flex;gap:8px;margin-bottom:10px">
+            <select id="mat-estado-filter" class="filter-select" onchange="renderMatControl()" style="font-size:11px">
+              <option value="">Todos</option>
+              <option value="pendiente">⏳ Pendiente</option>
+              <option value="comprado">✓ Comprado</option>
+              <option value="falta">⚠ Falta/Cambio</option>
+            </select>
+            <button class="btn btn-outline btn-sm" onclick="addMatExtra()">+ Extra</button>
+          </div>
+          <div id="mat-control-lista" style="max-height:340px;overflow-y:auto"></div>
+          <div style="padding:10px 0;border-top:1px solid var(--border2);margin-top:8px;display:flex;justify-content:space-between;font-size:12px">
+            <span style="color:var(--text2)">Gasto real acumulado:</span>
+            <span id="mat-gasto-total" style="font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--accent)">S/ 0.00</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Registro de personal -->
+      <div class="card">
+        <div class="card-header" style="background:#854F0B;border-radius:10px 10px 0 0">
+          <span class="card-title" style="color:#fff">👷 Control de Personal</span>
+          <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none;font-size:11px" onclick="abrirModalPersonal()">+ Registrar</button>
+        </div>
+        <div class="card-body" style="padding-bottom:0">
+          <div id="personal-lista" style="display:flex;flex-direction:column;gap:8px;max-height:360px;overflow-y:auto">
+            <div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;font-style:italic">Sin personal registrado</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Registro de gastos adicionales -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-header" style="background:#634B09;border-radius:10px 10px 0 0">
+        <span class="card-title" style="color:#fff">💰 Gastos Adicionales</span>
+        <button class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none;font-size:11px" onclick="addGasto()">+ Gasto</button>
+      </div>
+      <div class="card-body">
+        <div id="gastos-lista" style="display:flex;flex-direction:column;gap:6px;max-height:200px;overflow-y:auto;margin-bottom:10px">
+          <div style="text-align:center;padding:16px;color:var(--text3);font-size:12px;font-style:italic">Sin gastos registrados</div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:20px;border-top:1px solid var(--border2);padding-top:10px;font-size:13px">
+          <span style="color:var(--text2)">Total cotizado: <strong id="proc-total-cot" style="font-family:'IBM Plex Mono',monospace">S/ 0.00</strong></span>
+          <span style="color:var(--text2)">Total gastado: <strong id="proc-total-gasto" style="font-family:'IBM Plex Mono',monospace;color:var(--green)">S/ 0.00</strong></span>
+          <span style="color:var(--text2)">Diferencia: <strong id="proc-diferencia" style="font-family:'IBM Plex Mono',monospace;color:var(--accent2)">S/ 0.00</strong></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── PANEL: TRABAJO FINALIZADO ── -->
+  <div id="ppanel-finalizado" style="display:none">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+      <!-- Resumen del proyecto -->
+      <div class="card">
+        <div class="card-header" style="background:#375623;border-radius:10px 10px 0 0">
+          <span class="card-title" style="color:#fff">✅ Resumen Final</span>
+        </div>
+        <div class="card-body" id="final-resumen">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+            <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center">
+              <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Total cotizado</div>
+              <div id="fin-total-cot" style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:var(--accent)">S/ 0.00</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center">
+              <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Total gastado</div>
+              <div id="fin-total-gasto" style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:var(--green)">S/ 0.00</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center">
+              <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Margen real</div>
+              <div id="fin-margen" style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:var(--accent2)">S/ 0.00</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center">
+              <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Personal</div>
+              <div id="fin-personal" style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:#854F0B">0</div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Observaciones finales</label>
+            <textarea class="form-control" id="proy-obs-final" rows="3" style="background:var(--yellow);resize:vertical;min-height:80px" placeholder="Lecciones aprendidas, incidentes, observaciones del cliente, calidad del trabajo..."></textarea>
+          </div>
+          <div class="form-group" style="margin-top:8px">
+            <label class="form-label">Fecha de cierre</label>
+            <input type="date" class="form-control" id="proy-fecha-cierre" style="background:var(--yellow)">
+          </div>
+        </div>
+      </div>
+
+      <!-- Documentos de cierre / entrega -->
+      <div class="card">
+        <div class="card-header" style="background:#375623;border-radius:10px 10px 0 0">
+          <span class="card-title" style="color:#fff">📄 Entregables al Cliente</span>
+          <label class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none;font-size:11px;cursor:pointer;margin:0">
+            + Subir
+            <input type="file" multiple style="display:none" onchange="subirDocFinal(this)">
+          </label>
+        </div>
+        <div class="card-body">
+          <div style="font-size:11px;color:var(--text3);margin-bottom:10px;padding:8px;background:var(--surface2);border-radius:6px">
+            Informe final, relatorios, actas de conformidad, fotos finales, certificados
+          </div>
+          <div id="docs-final-lista" style="display:flex;flex-direction:column;gap:6px;max-height:250px;overflow-y:auto">
+            <div style="text-align:center;padding:16px;color:var(--text3);font-size:12px;font-style:italic">Sin documentos de cierre</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
+      <button class="btn btn-success" onclick="guardarProyecto()" style="font-weight:600">💾 Guardar cierre del proyecto</button>
+      <button class="btn btn-primary" onclick="generarInformeFinal()">📄 Generar informe final</button>
+    </div>
+  </div>
+
+  <!-- Modal: Registrar Personal -->
+  <div class="modal-overlay" id="modal-personal" onclick="if(this===event.target)closeModal('modal-personal')">
+    <div class="modal-box" style="max-width:580px">
+      <div class="modal-header" style="background:#854F0B;border-radius:10px 10px 0 0">
+        <span class="modal-title" style="color:#fff">👷 Registrar Trabajador</span>
+        <button onclick="closeModal('modal-personal')" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="form-group">
+            <label class="form-label">Nombre completo <span class="required">*</span></label>
+            <input type="text" class="form-control" id="pers-nombre" style="background:var(--yellow)" placeholder="Apellidos y nombres">
+          </div>
+          <div class="form-group">
+            <label class="form-label">DNI</label>
+            <input type="text" class="form-control" id="pers-dni" style="background:var(--yellow)" placeholder="00000000">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Cargo / Rol</label>
+            <input type="text" class="form-control" id="pers-cargo" style="background:var(--yellow)" placeholder="Técnico, Soldador, Supervisor...">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Teléfono</label>
+            <input type="text" class="form-control" id="pers-tel" style="background:var(--yellow)" placeholder="+51 9xx xxx xxx">
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label class="form-label">Certificaciones / Documentos</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+              <label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" id="pers-cert-altura"> Trabajo en Altura</label>
+              <label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" id="pers-cert-sctr"> SCTR</label>
+              <label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" id="pers-cert-epp"> EPP asignado</label>
+              <label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" id="pers-cert-soldadura"> Cert. Soldadura</label>
+              <label style="display:flex;align-items:center;gap:4px;font-size:12px"><input type="checkbox" id="pers-cert-primeros"> Primeros Auxilios</label>
+            </div>
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label class="form-label">Adjuntar documentos del trabajador</label>
+            <label class="btn btn-outline btn-sm" style="cursor:pointer;width:100%;justify-content:center">
+              📎 Seleccionar archivos
+              <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.docx" style="display:none" onchange="adjuntarDocsPersonal(this)">
+            </label>
+            <div id="pers-docs-lista" style="margin-top:6px;display:flex;flex-direction:column;gap:4px"></div>
+          </div>
+          <div class="form-group" style="grid-column:1/-1">
+            <label class="form-label">Observaciones</label>
+            <textarea class="form-control" id="pers-obs" rows="2" style="background:var(--yellow);resize:vertical;min-height:50px"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal('modal-personal')">Cancelar</button>
+        <button class="btn btn-primary" onclick="guardarPersonal()">✓ Registrar trabajador</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -4044,23 +4324,766 @@ function renderHistorico(){
         </select>
         <button class="btn btn-danger btn-sm" onclick="eliminarHistorico(${c.id})">✕</button>
       </div>
+      ${c.estado==='Aprobada'?`
+      <div style="grid-column:1/-1;background:linear-gradient(90deg,#E8F5E9,#F1F8E9);border-top:1px solid #A5D6A7;padding:10px 14px;border-radius:0 0 10px 10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span style="font-size:11px;font-weight:600;color:#375623;text-transform:uppercase;letter-spacing:.5px">🎯 Proyecto aprobado — Acciones:</span>
+        <button class="btn btn-sm" onclick="abrirProyecto(${c.id},'inicio')" style="background:#1F3864;color:#fff;border:none;gap:4px">🚀 Inicio de Operaciones</button>
+        <button class="btn btn-sm" onclick="abrirProyecto(${c.id},'proceso')" style="background:#854F0B;color:#fff;border:none">⚙ En Proceso</button>
+        <button class="btn btn-sm" onclick="abrirProyecto(${c.id},'finalizado')" style="background:#375623;color:#fff;border:none">✓ Trabajo Finalizado</button>
+      </div>`:''}
     </div>`;
   }).join('');
 }
 
 function cambiarEstado(id, estado){
   const idx = historicoCot.findIndex(c=>c.id===id);
-  if(idx>=0){ historicoCot[idx].estado = estado; saveHistorico(); }
+  if(idx>=0){
+    historicoCot[idx].estado = estado;
+    saveHistorico();
+    // Show/hide tab proyecto
+    if(estado==='Aprobada'){
+      const tab = document.getElementById('tab-proyecto');
+      if(tab) tab.style.display='flex';
+    }
+  }
   showNotif('Estado actualizado: '+estado);
+  renderHistorico();
 }
 
-function eliminarHistorico(id){
+let proyectoActualId = null;
+
+// Estado del proyecto en memoria (se persiste en historicoCot[x].proyecto)
+const REQUISITOS_SIG_DEFAULT = [
+  {id:1, req:'Carta de Presentación', desc:'Firmada por Administrador/Responsable de Sede', ok:false, archivo:null},
+  {id:2, req:'SCTR Vigente', desc:'Cobertura Salud + Pensión vigente, adjunto a carta', ok:false, archivo:null},
+  {id:3, req:'Inducción SST y Medio Ambiente', desc:'Lunes, Miércoles y Viernes 7:30–8:30am — previa conformidad con carta y SCTR', ok:false, archivo:null},
+  {id:4, req:'IPERC', desc:'Identificación Peligros, Evaluación Riesgos y Controles — PDF firmado', ok:false, archivo:null},
+  {id:5, req:'PETS', desc:'Procedimiento Escrito de Trabajo Seguro — PDF firmado', ok:false, archivo:null},
+  {id:6, req:'Lista de EPP', desc:'Relación EPP del personal en función de riesgos — PDF firmado', ok:false, archivo:null},
+  {id:7, req:'Hoja de Vida Prevencionista', desc:'Competencias y experiencia del profesional SSOMA (si hay alto riesgo)', ok:false, archivo:null},
+  {id:8, req:'Matriz de Impacto Ambiental', desc:'Identificación aspectos e impactos ambientales ISO 14001 — PDF firmado', ok:false, archivo:null},
+  {id:9, req:'Plan de Contingencia', desc:'Respuesta ante emergencias — PDF firmado', ok:false, archivo:null},
+  {id:10, req:'Control de Calidad', desc:'Criterios de calidad, especificaciones técnicas y controles', ok:false, archivo:null},
+];
+
+function getProyecto(id){
   const c = historicoCot.find(h=>h.id===id);
-  if(!c||!confirm(`¿Eliminar la cotización ${c.num} del historial?`)) return;
-  historicoCot = historicoCot.filter(h=>h.id!==id);
+  if(!c) return null;
+  if(!c.proyecto){
+    c.proyecto = {
+      fase: 'inicio',
+      fechaInicio:'', fechaFin:'', fechaCierre:'', supervisor:'', obsInicio:'', obsFinal:'',
+      requisitos: JSON.parse(JSON.stringify(REQUISITOS_SIG_DEFAULT)),
+      docsInicio: [], docsFinales: [],
+      personal: [],
+      materiales: [], // [{...item cotizacion, comprado:false, precioReal:0, obs:''}]
+      gastosExtra: [],
+    };
+  }
+  return c.proyecto;
+}
+
+function abrirProyecto(id, fase){
+  proyectoActualId = id;
+  const c = historicoCot.find(h=>h.id===id);
+  if(!c) return;
+  const proy = getProyecto(id);
+  proy.fase = fase || proy.fase || 'inicio';
+
+  // Update header
+  document.getElementById('proy-titulo').textContent = `Proyecto: ${c.num} — ${c.cliente}`;
+  document.getElementById('proy-subtitulo').textContent = `${c.desc||'—'} • ${c.lugar||'—'} • ${fmt(c.totalConIGV)}`;
+
+  // Restore saved values
+  const setVal = (id, val) => { const el=document.getElementById(id); if(el&&val) el.value=val; };
+  setVal('proy-fecha-inicio', proy.fechaInicio);
+  setVal('proy-fecha-fin', proy.fechaFin);
+  setVal('proy-supervisor', proy.supervisor);
+  setVal('proy-obs-inicio', proy.obsInicio);
+  setVal('proy-obs-final', proy.obsFinal);
+  setVal('proy-fecha-cierre', proy.fechaCierre);
+
+  // Build materiales from cotización secciones if empty
+  if(!proy.materiales.length && c.secciones){
+    c.secciones.forEach(sec=>{
+      (sec.items||[]).forEach(item=>{
+        if(item.desc||item.spec){
+          proy.materiales.push({
+            desc: item.desc||item.spec||'—',
+            spec: item.spec||'',
+            unit: item.unit||'und',
+            qty:  item.qty||1,
+            costoCot: item.costo||0,
+            precioReal: 0,
+            comprado: false,
+            estado: 'pendiente', // pendiente | comprado | falta
+            obs: '',
+            seccion: sec.label||''
+          });
+        }
+      });
+    });
+  }
+
+  // Show tab
+  const tab = document.getElementById('tab-proyecto');
+  if(tab) tab.style.display='flex';
+
+  switchPage('proyecto');
+  switchProyTab(proy.fase);
+}
+
+function switchProyTab(tab){
+  ['inicio','proceso','finalizado'].forEach(t=>{
+    const btn = document.getElementById('ptab-'+t);
+    const panel = document.getElementById('ppanel-'+t);
+    const active = t===tab;
+    if(btn){
+      const colors = {inicio:'#1F3864', proceso:'#854F0B', finalizado:'#375623'};
+      btn.style.background = active ? colors[t] : 'var(--surface2)';
+      btn.style.color = active ? '#fff' : 'var(--text2)';
+      btn.style.fontWeight = active ? '600' : '500';
+    }
+    if(panel) panel.style.display = active ? 'block' : 'none';
+  });
+  if(!proyectoActualId) return;
+  const proy = getProyecto(proyectoActualId);
+  if(proy) proy.fase = tab;
+  if(tab==='inicio') renderRequisitos();
+  if(tab==='proceso'){ renderMatControl(); renderPersonal(); renderGastos(); }
+  if(tab==='finalizado') renderResumenFinal();
+}
+
+// ── REQUISITOS SIG ──────────────────────────────────────────────────────────
+function renderRequisitos(){
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  const lista = document.getElementById('req-lista'); if(!lista) return;
+  const cumplidos = proy.requisitos.filter(r=>r.ok).length;
+  lista.innerHTML = proy.requisitos.map((r,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:7px;border:1px solid var(--border2);background:${r.ok?'#F0FFF4':'var(--surface2)'}">
+      <input type="checkbox" ${r.ok?'checked':''} onchange="toggleRequisito(${i},this.checked)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--green)">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;color:${r.ok?'#375623':'var(--text)'}">${r.req}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:1px">${r.desc}</div>
+        ${r.archivo?`<div style="font-size:10px;color:var(--green);margin-top:2px">📎 ${r.archivo}</div>`:''}
+      </div>
+      <label style="cursor:pointer;font-size:10px;color:var(--accent2);white-space:nowrap">
+        📎
+        <input type="file" accept=".pdf,.doc,.docx,.jpg,.png" style="display:none" onchange="adjuntarRequisito(${i},this)">
+      </label>
+    </div>`).join('');
+  // Progress bar
+  const pct = Math.round(cumplidos/proy.requisitos.length*100);
+  const docsProy = document.getElementById('proy-docs-lista');
+  if(docsProy){
+    const prog = docsProy.previousElementSibling;
+  }
+  // Show progress in card header
+  const hdr = document.querySelector('#ppanel-inicio .card-header');
+  if(hdr){
+    const badge = hdr.querySelector('.req-progress') || document.createElement('span');
+    badge.className = 'req-progress';
+    badge.style.cssText = 'font-size:11px;background:rgba(255,255,255,.2);padding:2px 8px;border-radius:10px;color:#fff';
+    badge.textContent = `${cumplidos}/${proy.requisitos.length}`;
+    if(!hdr.querySelector('.req-progress')) hdr.appendChild(badge);
+    else badge.textContent = `${cumplidos}/${proy.requisitos.length}`;
+  }
+  renderDocsProy();
+}
+
+function toggleRequisito(i, ok){
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  proy.requisitos[i].ok = ok;
+  guardarProyecto(true);
+  renderRequisitos();
+}
+
+function adjuntarRequisito(i, input){
+  const file = input.files[0]; if(!file) return;
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    proy.requisitos[i].archivo = file.name;
+    proy.requisitos[i].ok = true;
+    proy.requisitos[i].dataUrl = e.target.result;
+    guardarProyecto(true);
+    renderRequisitos();
+    showNotif(`Documento "${file.name}" adjunto a ${proy.requisitos[i].req}`);
+  };
+  reader.readAsDataURL(file);
+}
+
+function addRequisito(){
+  const nombre = prompt('Nombre del nuevo requisito:');
+  if(!nombre) return;
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  proy.requisitos.push({id:Date.now(), req:nombre, desc:'Requisito adicional', ok:false, archivo:null});
+  guardarProyecto(true); renderRequisitos();
+}
+
+// ── DOCUMENTOS PROYECTO ─────────────────────────────────────────────────────
+function subirDocumentoProy(input){
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  Array.from(input.files).forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      proy.docsInicio.push({name:file.name, size:(file.size/1024).toFixed(0)+' KB', type:file.type, dataUrl:e.target.result, fecha:new Date().toLocaleDateString('es-PE')});
+      guardarProyecto(true); renderDocsProy();
+      showNotif(`"${file.name}" adjuntado`);
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value='';
+}
+
+function renderDocsProy(){
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  const lista = document.getElementById('proy-docs-lista'); if(!lista) return;
+  if(!proy.docsInicio.length){
+    lista.innerHTML='<div style="text-align:center;padding:16px;color:var(--text3);font-size:12px;font-style:italic">Adjunta: Carta presentación, SCTR, PETS, IPERC, Plan Contingencia, EPP, Matriz Ambiental</div>';
+    return;
+  }
+  lista.innerHTML = proy.docsInicio.map((d,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2)">
+      <span style="font-size:18px">${d.type&&d.type.includes('pdf')?'📄':d.type&&d.type.includes('image')?'🖼️':'📎'}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}</div>
+        <div style="font-size:10px;color:var(--text3)">${d.size} · ${d.fecha}</div>
+      </div>
+      <button onclick="eliminarDocProy(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;padding:2px 6px">✕</button>
+    </div>`).join('');
+}
+
+function eliminarDocProy(i){
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  proy.docsInicio.splice(i,1); guardarProyecto(true); renderDocsProy();
+}
+
+// ── CONTROL DE MATERIALES ────────────────────────────────────────────────────
+function renderMatControl(){
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  const lista = document.getElementById('mat-control-lista'); if(!lista) return;
+  const filter = document.getElementById('mat-estado-filter')?.value||'';
+  const mats = proy.materiales.filter(m=>!filter||m.estado===filter);
+  let totalGasto = 0;
+  proy.materiales.forEach(m=>{ if(m.comprado) totalGasto += (parseFloat(m.precioReal)||0)*m.qty; });
+  const el = document.getElementById('mat-gasto-total');
+  if(el) el.textContent = fmt(totalGasto);
+
+  if(!mats.length){
+    lista.innerHTML='<div style="text-align:center;padding:16px;color:var(--text3);font-size:12px;font-style:italic">Sin materiales en este filtro</div>';
+    return;
+  }
+  lista.innerHTML = proy.materiales.map((m,i)=>{
+    if(filter && m.estado!==filter) return '';
+    const estadoColor = {pendiente:'#C9A227', comprado:'#375623', falta:'#A32D2D'}[m.estado]||'#555';
+    return `<div style="padding:8px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2);margin-bottom:4px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <select onchange="cambiarEstadoMat(${i},this.value)" style="font-size:10px;padding:2px 6px;border:1px solid ${estadoColor};border-radius:4px;background:${estadoColor}15;color:${estadoColor};font-weight:600;cursor:pointer">
+          <option value="pendiente"${m.estado==='pendiente'?' selected':''}>⏳ Pendiente</option>
+          <option value="comprado"${m.estado==='comprado'?' selected':''}>✓ Comprado</option>
+          <option value="falta"${m.estado==='falta'?' selected':''}>⚠ Falta/Cambio</option>
+        </select>
+        <span style="font-size:12px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.desc}</span>
+        <span style="font-size:11px;color:var(--text2);white-space:nowrap">${m.qty} ${m.unit}</span>
+      </div>
+      ${m.estado==='comprado'?`
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="font-size:10px;color:var(--text2)">Precio real S/:</label>
+        <input type="number" value="${m.precioReal||''}" min="0" step="0.01" placeholder="0.00"
+          style="width:80px;padding:3px 7px;border:1px solid var(--border);border-radius:4px;font-size:11px;background:var(--yellow)"
+          oninput="actualizarPrecioMat(${i},this.value)">
+        <span style="font-size:10px;color:var(--text3)">Cot: S/ ${fmtN(m.costoCot)}</span>
+      </div>`:''}
+      ${m.seccion?`<div style="font-size:10px;color:var(--text3);margin-top:2px">${m.seccion}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function cambiarEstadoMat(i, estado){
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  proy.materiales[i].estado = estado;
+  proy.materiales[i].comprado = estado==='comprado';
+  guardarProyecto(true); renderMatControl(); recalcGastos();
+}
+
+function actualizarPrecioMat(i, val){
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  proy.materiales[i].precioReal = parseFloat(val)||0;
+  guardarProyecto(true); recalcGastos();
+}
+
+function addMatExtra(){
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  proy.materiales.push({desc:'Material adicional',spec:'',unit:'und',qty:1,costoCot:0,precioReal:0,comprado:false,estado:'pendiente',obs:'',seccion:'Extra'});
+  guardarProyecto(true); renderMatControl();
+}
+
+// ── GASTOS ADICIONALES ───────────────────────────────────────────────────────
+function addGasto(){
+  const desc = prompt('Descripción del gasto:'); if(!desc) return;
+  const monto = parseFloat(prompt('Monto S/:')||'0');
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  proy.gastosExtra.push({desc, monto, fecha:new Date().toLocaleDateString('es-PE'), id:Date.now()});
+  guardarProyecto(true); renderGastos(); recalcGastos();
+}
+
+function renderGastos(){
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  const lista = document.getElementById('gastos-lista'); if(!lista) return;
+  if(!proy.gastosExtra.length){
+    lista.innerHTML='<div style="text-align:center;padding:16px;color:var(--text3);font-size:12px;font-style:italic">Sin gastos adicionales</div>';
+    return;
+  }
+  lista.innerHTML = proy.gastosExtra.map((g,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;background:var(--surface2);border:1px solid var(--border2)">
+      <div style="flex:1"><div style="font-size:12px;font-weight:500">${g.desc}</div><div style="font-size:10px;color:var(--text3)">${g.fecha}</div></div>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--green)">S/ ${fmtN(g.monto)}</span>
+      <button onclick="eliminarGasto(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:11px">✕</button>
+    </div>`).join('');
+}
+
+function eliminarGasto(i){
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  proy.gastosExtra.splice(i,1); guardarProyecto(true); renderGastos(); recalcGastos();
+}
+
+function recalcGastos(){
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  const c = historicoCot.find(h=>h.id===proyectoActualId); if(!c) return;
+  let gastoMat = 0;
+  proy.materiales.forEach(m=>{ if(m.comprado) gastoMat += (m.precioReal||0)*m.qty; });
+  let gastoExtra = proy.gastosExtra.reduce((a,g)=>a+g.monto,0);
+  const totalGasto = gastoMat + gastoExtra;
+  const totalCot = c.totalConIGV||0;
+  const setT = (id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=val; };
+  setT('proc-total-cot', fmt(totalCot));
+  setT('proc-total-gasto', fmt(totalGasto));
+  setT('proc-diferencia', fmt(totalCot-totalGasto));
+  // Update mat gasto
+  const el = document.getElementById('mat-gasto-total');
+  if(el) el.textContent = fmt(gastoMat);
+}
+
+// ── PERSONAL ─────────────────────────────────────────────────────────────────
+let persDocsTemp = [];
+
+function abrirModalPersonal(){
+  persDocsTemp = [];
+  ['pers-nombre','pers-dni','pers-cargo','pers-tel','pers-obs'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  ['pers-cert-altura','pers-cert-sctr','pers-cert-epp','pers-cert-soldadura','pers-cert-primeros'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.checked=false;
+  });
+  document.getElementById('pers-docs-lista').innerHTML='';
+  openModal('modal-personal');
+}
+
+function adjuntarDocsPersonal(input){
+  Array.from(input.files).forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      persDocsTemp.push({name:file.name, size:(file.size/1024).toFixed(0)+' KB', type:file.type, dataUrl:e.target.result});
+      renderDocsPersonalTemp();
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value='';
+}
+
+function renderDocsPersonalTemp(){
+  const lista = document.getElementById('pers-docs-lista'); if(!lista) return;
+  lista.innerHTML = persDocsTemp.map((d,i)=>`
+    <div style="display:flex;align-items:center;gap:6px;font-size:11px;padding:4px 8px;background:var(--surface2);border-radius:5px">
+      <span>📎</span><span style="flex:1">${d.name}</span><span style="color:var(--text3)">${d.size}</span>
+      <button onclick="persDocsTemp.splice(${i},1);renderDocsPersonalTemp()" style="background:none;border:none;color:var(--red);cursor:pointer">✕</button>
+    </div>`).join('');
+}
+
+function guardarPersonal(){
+  const nombre = document.getElementById('pers-nombre')?.value.trim();
+  if(!nombre){ showNotif('El nombre es obligatorio','error'); return; }
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  const getCert = id => document.getElementById(id)?.checked||false;
+  proy.personal.push({
+    id: Date.now(),
+    nombre,
+    dni:   document.getElementById('pers-dni')?.value.trim()||'',
+    cargo: document.getElementById('pers-cargo')?.value.trim()||'',
+    tel:   document.getElementById('pers-tel')?.value.trim()||'',
+    obs:   document.getElementById('pers-obs')?.value.trim()||'',
+    certs: {
+      altura:    getCert('pers-cert-altura'),
+      sctr:      getCert('pers-cert-sctr'),
+      epp:       getCert('pers-cert-epp'),
+      soldadura: getCert('pers-cert-soldadura'),
+      primeros:  getCert('pers-cert-primeros'),
+    },
+    docs:     [...persDocsTemp],
+    fechaReg: new Date().toLocaleDateString('es-PE'),
+  });
+  guardarProyecto(true);
+  closeModal('modal-personal');
+  renderPersonal();
+  showNotif(`Trabajador "${nombre}" registrado correctamente`);
+}
+
+function renderPersonal(){
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  const lista = document.getElementById('personal-lista'); if(!lista) return;
+  if(!proy.personal.length){
+    lista.innerHTML='<div style="text-align:center;padding:20px;color:var(--text3);font-size:12px;font-style:italic">Sin personal registrado</div>';
+    return;
+  }
+  lista.innerHTML = proy.personal.map((p,i)=>{
+    const certOk = Object.values(p.certs).filter(Boolean).length;
+    const certTotal = Object.values(p.certs).length;
+    const certColor = certOk===certTotal?'#375623':certOk===0?'#A32D2D':'#854F0B';
+    const certLabels = {altura:'Altura',sctr:'SCTR',epp:'EPP',soldadura:'Soldadura',primeros:'P.Auxilios'};
+    return `<div style="border:1px solid var(--border2);border-radius:8px;padding:10px 12px;background:var(--surface2)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="width:34px;height:34px;border-radius:50%;background:#854F0B;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0">
+          ${p.nombre.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase()}
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600">${p.nombre}</div>
+          <div style="font-size:11px;color:var(--text2)">${p.cargo||'—'} ${p.dni?'· DNI: '+p.dni:''}</div>
+        </div>
+        <span style="font-size:10px;padding:2px 7px;border-radius:10px;background:${certColor}20;color:${certColor};font-weight:600">${certOk}/${certTotal} certs.</span>
+        <button onclick="eliminarPersonal(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:11px;padding:2px 6px">✕</button>
+      </div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap">
+        ${Object.entries(p.certs).map(([k,v])=>`<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:${v?'#E8F5E9':'#FFEBEE'};color:${v?'#375623':'#A32D2D'};font-weight:500">${v?'✓':'✗'} ${certLabels[k]}</span>`).join('')}
+      </div>
+      ${p.docs&&p.docs.length?`<div style="font-size:10px;color:var(--text3);margin-top:4px">📎 ${p.docs.length} doc${p.docs.length!==1?'s':''} adjuntos</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function eliminarPersonal(i){
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  if(!confirm('¿Eliminar este trabajador del registro?')) return;
+  proy.personal.splice(i,1); guardarProyecto(true); renderPersonal();
+}
+
+// ── RESUMEN FINAL ────────────────────────────────────────────────────────────
+function renderResumenFinal(){
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  const c = historicoCot.find(h=>h.id===proyectoActualId); if(!c) return;
+  let gastoMat = 0;
+  proy.materiales.forEach(m=>{ if(m.comprado) gastoMat += (m.precioReal||0)*m.qty; });
+  const gastoExtra = proy.gastosExtra.reduce((a,g)=>a+g.monto,0);
+  const totalGasto = gastoMat+gastoExtra;
+  const totalCot = c.totalConIGV||0;
+  const margen = totalCot-totalGasto;
+  const setT = (id,val)=>{ const el=document.getElementById(id); if(el) el.textContent=val; };
+  setT('fin-total-cot',  fmt(totalCot));
+  setT('fin-total-gasto',fmt(totalGasto));
+  setT('fin-margen',     fmt(margen));
+  setT('fin-personal',   String(proy.personal.length));
+  // Restore obs/fecha
+  const setV = (id,val)=>{ const el=document.getElementById(id); if(el&&val) el.value=val; };
+  setV('proy-obs-final',   proy.obsFinal);
+  setV('proy-fecha-cierre',proy.fechaCierre);
+  renderDocsFinal();
+}
+
+function subirDocFinal(input){
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  Array.from(input.files).forEach(file=>{
+    const reader = new FileReader();
+    reader.onload = e=>{
+      proy.docsFinales.push({name:file.name, size:(file.size/1024).toFixed(0)+' KB', type:file.type, dataUrl:e.target.result, fecha:new Date().toLocaleDateString('es-PE')});
+      guardarProyecto(true); renderDocsFinal();
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value='';
+}
+
+function renderDocsFinal(){
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  const lista = document.getElementById('docs-final-lista'); if(!lista) return;
+  if(!proy.docsFinales.length){
+    lista.innerHTML='<div style="text-align:center;padding:16px;color:var(--text3);font-size:12px;font-style:italic">Sin documentos de cierre</div>';
+    return;
+  }
+  lista.innerHTML = proy.docsFinales.map((d,i)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;border:1px solid var(--border2);background:var(--surface2)">
+      <span>${d.type&&d.type.includes('pdf')?'📄':d.type&&d.type.includes('image')?'🖼️':'📎'}</span>
+      <div style="flex:1"><div style="font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.name}</div>
+        <div style="font-size:10px;color:var(--text3)">${d.size} · ${d.fecha}</div></div>
+      <button onclick="eliminarDocFinal(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:12px">✕</button>
+    </div>`).join('');
+}
+
+function eliminarDocFinal(i){
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  proy.docsFinales.splice(i,1); guardarProyecto(true); renderDocsFinal();
+}
+
+function guardarProyecto(silent=false){
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  // Save form values
+  const getV = id => document.getElementById(id)?.value||'';
+  proy.fechaInicio = getV('proy-fecha-inicio');
+  proy.fechaFin    = getV('proy-fecha-fin');
+  proy.supervisor  = getV('proy-supervisor');
+  proy.obsInicio   = getV('proy-obs-inicio');
+  proy.obsFinal    = getV('proy-obs-final');
+  proy.fechaCierre = getV('proy-fecha-cierre');
   saveHistorico();
-  renderHistorico();
-  showNotif('Cotización eliminada del historial','error');
+  if(!silent) showNotif('Proyecto guardado correctamente');
+}
+
+function generarCartaPresentacion(){
+  guardarProyecto(true);
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  const c = historicoCot.find(h=>h.id===proyectoActualId); if(!c) return;
+
+  const fecha = new Date().toLocaleDateString('es-PE',{day:'2-digit',month:'long',year:'numeric'});
+  const supervisor = proy.supervisor || 'José Moncada Lluen';
+  const personalList = proy.personal.map(p=>`<tr>
+    <td style="padding:5px 10px;border:1px solid #ccc">${p.nombre||'—'}</td>
+    <td style="padding:5px 10px;border:1px solid #ccc">${p.cargo||'—'}</td>
+    <td style="padding:5px 10px;border:1px solid #ccc">${p.dni||'—'}</td>
+    <td style="padding:5px 10px;border:1px solid #ccc;text-align:center">${p.certs&&p.certs.length?p.certs.join(', '):'—'}</td>
+  </tr>`).join('');
+
+  const win = window.open('','_blank','width=850,height:700');
+  win.document.write(`<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><title>Carta de Presentación — ${c.cliente}</title>
+<style>
+  body{font-family:Arial,sans-serif;margin:0;padding:30px 40px;color:#222;font-size:13px;line-height:1.7}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1F3864;padding-bottom:16px;margin-bottom:20px}
+  .logo-block{display:flex;align-items:center;gap:12px}
+  .company-info{text-align:right;font-size:11px;color:#555}
+  h1{font-size:15px;text-align:center;text-transform:uppercase;color:#1F3864;margin:20px 0}
+  .dest{background:#F5F5F5;border-left:4px solid #1F3864;padding:10px 14px;margin:16px 0;font-size:12px}
+  table{width:100%;border-collapse:collapse;margin:10px 0}
+  th{background:#1F3864;color:#fff;padding:7px 10px;border:1px solid #1F3864;font-size:12px;text-align:left}
+  .firma-block{margin-top:40px;display:grid;grid-template-columns:1fr 1fr;gap:40px}
+  .firma-box{text-align:center}
+  .firma-line{border-top:1px solid #333;margin:50px 20px 6px}
+  .no-print{margin-bottom:16px;padding:10px;background:#f0f0f0;border-radius:6px;display:flex;gap:8px;align-items:center}
+  @media print{.no-print{display:none}}
+</style></head>
+<body>
+<div class="no-print">
+  <button onclick="window.print()" style="background:#1F3864;color:#fff;border:none;padding:7px 16px;border-radius:5px;cursor:pointer;font-weight:500">⎙ Imprimir / Guardar PDF</button>
+  <button onclick="window.close()" style="background:#eee;border:1px solid #ccc;padding:7px 12px;border-radius:5px;cursor:pointer">✕ Cerrar</button>
+  <span style="font-size:11px;color:#777">Al imprimir selecciona "Guardar como PDF" y desactiva encabezados y pies de página</span>
+</div>
+
+<div class="header">
+  <div class="logo-block">
+    <img src="${typeof TYC_LOGO!=='undefined'?TYC_LOGO:''}" style="height:70px;object-fit:contain">
+    <div>
+      <div style="font-size:14px;font-weight:700;color:#1F3864">TYC SERVICIOS Y MANTENIMIENTO GENERALES S.R.L.</div>
+      <div style="font-size:11px;color:#555">RUC: 20614003546</div>
+      <div style="font-size:11px;color:#555">Calle Javier Pérez de Cuellar N°08, A.H. San Francisco, Paita</div>
+    </div>
+  </div>
+  <div class="company-info">
+    <div>adm@tycsmg.com</div>
+    <div>www.tycsmg.com</div>
+    <div>Tel: +51 943 435 224</div>
+    <div style="margin-top:4px;font-weight:600">Paita, ${fecha}</div>
+  </div>
+</div>
+
+<h1>CARTA DE PRESENTACIÓN</h1>
+
+<div class="dest">
+  <strong>Señores:</strong><br>
+  <strong>${c.cliente||'Cliente'}</strong>${c.ruc?` — RUC: ${c.ruc}`:''}<br>
+  ${c.lugar||'—'}<br>
+  <strong>Administrador / Responsable de Sede</strong>
+</div>
+
+<p>Estimados señores:</p>
+
+<p>Por medio de la presente, TYC Servicios y Mantenimiento Generales S.R.L., empresa debidamente constituida con RUC N° 20614003546, dedicada a servicios de mantenimiento industrial, metalmecánica y trabajos de alto riesgo, se dirige a ustedes con la finalidad de presentar formalmente a nuestro equipo de trabajo que ejecutará los servicios contratados en sus instalaciones.</p>
+
+<p><strong>DATOS DEL SERVICIO:</strong></p>
+<table>
+  <tr><th style="width:200px">Concepto</th><th>Detalle</th></tr>
+  <tr><td style="padding:6px 10px;border:1px solid #ccc">N° Cotización</td><td style="padding:6px 10px;border:1px solid #ccc"><strong>${c.num}</strong></td></tr>
+  <tr><td style="padding:6px 10px;border:1px solid #ccc">Descripción del servicio</td><td style="padding:6px 10px;border:1px solid #ccc">${c.desc||'—'}</td></tr>
+  <tr><td style="padding:6px 10px;border:1px solid #ccc">Ubicación</td><td style="padding:6px 10px;border:1px solid #ccc">${c.lugar||'—'}</td></tr>
+  <tr><td style="padding:6px 10px;border:1px solid #ccc">Fecha de inicio estimada</td><td style="padding:6px 10px;border:1px solid #ccc">${proy.fechaInicio||'—'}</td></tr>
+  <tr><td style="padding:6px 10px;border:1px solid #ccc">Fecha de término estimada</td><td style="padding:6px 10px;border:1px solid #ccc">${proy.fechaFin||'—'}</td></tr>
+  <tr><td style="padding:6px 10px;border:1px solid #ccc">Supervisor responsable</td><td style="padding:6px 10px;border:1px solid #ccc">${supervisor}</td></tr>
+  <tr><td style="padding:6px 10px;border:1px solid #ccc">Valor del servicio</td><td style="padding:6px 10px;border:1px solid #ccc"><strong>${fmt(c.totalConIGV)} (incluye IGV 18%)</strong></td></tr>
+</table>
+
+<p style="margin-top:16px"><strong>PERSONAL ASIGNADO AL SERVICIO:</strong></p>
+${personalList ? `<table>
+  <tr><th>Nombre completo</th><th>Cargo</th><th>DNI</th><th>Certificaciones</th></tr>
+  ${personalList}
+</table>` : '<p style="color:#888;font-style:italic">Personal por asignar. Se adjuntará antes del inicio.</p>'}
+
+<p style="margin-top:16px">Adjunto a la presente carta, remitimos la siguiente documentación requerida:</p>
+<ul style="margin:8px 0;padding-left:22px;line-height:2">
+${proy.requisitos.filter(r=>r.ok&&r.archivo).map(r=>`<li><strong>${r.req}</strong> — ${r.archivo}</li>`).join('')||'<li style="color:#888">Documentación en proceso de preparación</li>'}
+</ul>
+
+<p style="margin-top:10px">Nos comprometemos a cumplir con todos los estándares de seguridad, medio ambiente y calidad requeridos por su organización, incluyendo los lineamientos del Sistema Integrado de Gestión y el cumplimiento de la normativa vigente en materia de Seguridad y Salud en el Trabajo (Ley N° 29783 y su Reglamento D.S. 005-2012-TR).</p>
+
+<p>Quedamos a su disposición para cualquier consulta o coordinación adicional.</p>
+
+<p>Atentamente,</p>
+
+<div class="firma-block">
+  <div class="firma-box">
+    ${typeof TYC_LOGO!=='undefined'?`<img src="${TYC_LOGO}" style="max-height:50px;object-fit:contain;margin-bottom:8px"><br>`:''}
+    <div class="firma-line"></div>
+    <div style="font-weight:700;font-size:13px">TYC SERVICIOS Y MANTENIMIENTO GENERALES S.R.L.</div>
+    <div style="font-size:12px;color:#555">José Moncada Lluen — Gerente General</div>
+    <div style="font-size:11px;color:#555">DNI: 03463888</div>
+  </div>
+  <div class="firma-box">
+    <div class="firma-line"></div>
+    <div style="font-weight:700;font-size:13px">V°B° ADMINISTRADOR / RESPONSABLE DE SEDE</div>
+    <div style="font-size:12px;color:#555">${c.cliente||'Cliente'}</div>
+    <div style="font-size:11px;color:#777">Sello y firma</div>
+  </div>
+</div>
+</body></html>`);
+  win.document.close();
+}
+
+function generarInformeFinal(){
+  guardarProyecto(true);
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  const c = historicoCot.find(h=>h.id===proyectoActualId); if(!c) return;
+
+  let gastoMat = 0;
+  proy.materiales.forEach(m=>{ if(m.comprado) gastoMat += (m.precioReal||0)*(m.qty||1); });
+  const gastoExtra = proy.gastosExtra.reduce((a,g)=>a+g.monto,0);
+  const totalGasto = gastoMat + gastoExtra;
+  const totalCot   = c.totalConIGV||0;
+  const margen     = totalCot - totalGasto;
+  const fecha = new Date().toLocaleDateString('es-PE',{day:'2-digit',month:'long',year:'numeric'});
+
+  const matRows = proy.materiales.map(m=>`<tr>
+    <td style="padding:5px 8px;border:1px solid #ddd;font-size:11px">${m.desc||'—'}</td>
+    <td style="padding:5px 8px;border:1px solid #ddd;font-size:11px">${m.qty||1} ${m.unit||''}</td>
+    <td style="padding:5px 8px;border:1px solid #ddd;font-size:11px;text-align:center">
+      <span style="padding:2px 8px;border-radius:10px;font-size:10px;background:${m.estado==='comprado'?'#E8F5E9':m.estado==='falta'?'#FFF3E0':'#E3F2FD'};color:${m.estado==='comprado'?'#375623':m.estado==='falta'?'#854F0B':'#1F3864'}">
+        ${m.estado==='comprado'?'✓ Comprado':m.estado==='falta'?'⚠ Falta':'⏳ Pendiente'}
+      </span>
+    </td>
+    <td style="padding:5px 8px;border:1px solid #ddd;font-size:11px;text-align:right">S/ ${fmtN(m.precioReal||0)}</td>
+  </tr>`).join('');
+
+  const persRows = proy.personal.map(p=>`<tr>
+    <td style="padding:5px 8px;border:1px solid #ddd;font-size:11px">${p.nombre||'—'}</td>
+    <td style="padding:5px 8px;border:1px solid #ddd;font-size:11px">${p.cargo||'—'}</td>
+    <td style="padding:5px 8px;border:1px solid #ddd;font-size:11px">${p.dni||'—'}</td>
+    <td style="padding:5px 8px;border:1px solid #ddd;font-size:11px">${p.certs&&p.certs.length?p.certs.join(', '):'—'}</td>
+  </tr>`).join('');
+
+  const gastoRows = proy.gastosExtra.map(g=>`<tr>
+    <td style="padding:5px 8px;border:1px solid #ddd;font-size:11px">${g.desc||'—'}</td>
+    <td style="padding:5px 8px;border:1px solid #ddd;font-size:11px">${g.fecha||'—'}</td>
+    <td style="padding:5px 8px;border:1px solid #ddd;font-size:11px;text-align:right">S/ ${fmtN(g.monto||0)}</td>
+  </tr>`).join('');
+
+  const reqRows = proy.requisitos.map(r=>`<tr>
+    <td style="padding:5px 8px;border:1px solid #ddd;font-size:11px">${r.req}</td>
+    <td style="padding:5px 8px;border:1px solid #ddd;font-size:11px;text-align:center">
+      <span style="color:${r.ok?'#375623':'#C00000'};font-weight:600">${r.ok?'✓ Cumplido':'✗ Pendiente'}</span>
+    </td>
+    <td style="padding:5px 8px;border:1px solid #ddd;font-size:11px;color:#555">${r.archivo||'—'}</td>
+  </tr>`).join('');
+
+  const win = window.open('','_blank','width=900,height=700');
+  win.document.write(`<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><title>Informe Final — ${c.num}</title>
+<style>
+  body{font-family:Arial,sans-serif;margin:0;padding:28px 36px;color:#222;font-size:12px;line-height:1.6}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #375623;padding-bottom:14px;margin-bottom:18px}
+  h1{font-size:16px;text-transform:uppercase;color:#375623;margin:0 0 4px}
+  h2{font-size:13px;color:#1F3864;border-bottom:2px solid #1F3864;padding-bottom:4px;margin:20px 0 8px;text-transform:uppercase}
+  table{width:100%;border-collapse:collapse;margin:6px 0}
+  th{background:#375623;color:#fff;padding:6px 8px;border:1px solid #375623;font-size:11px;text-align:left}
+  .kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+  .kpi-box{border:1px solid #ddd;border-radius:6px;padding:10px;text-align:center}
+  .kpi-label{font-size:9px;text-transform:uppercase;color:#888;margin-bottom:4px}
+  .kpi-val{font-size:16px;font-weight:700}
+  .no-print{margin-bottom:14px;padding:8px 12px;background:#f0f0f0;border-radius:6px;display:flex;gap:8px;align-items:center}
+  @media print{.no-print{display:none};body{padding:16px 24px}}
+</style></head>
+<body>
+<div class="no-print">
+  <button onclick="window.print()" style="background:#375623;color:#fff;border:none;padding:7px 16px;border-radius:5px;cursor:pointer;font-weight:500">⎙ Imprimir / PDF</button>
+  <button onclick="window.close()" style="background:#eee;border:1px solid #ccc;padding:7px 12px;border-radius:5px;cursor:pointer">✕ Cerrar</button>
+</div>
+
+<div class="header">
+  <div style="display:flex;align-items:center;gap:14px">
+    <img src="${typeof TYC_LOGO!=='undefined'?TYC_LOGO:''}" style="height:60px;object-fit:contain">
+    <div>
+      <h1>Informe Final de Servicio</h1>
+      <div style="font-size:11px;color:#555">TYC Servicios y Mantenimiento Generales S.R.L. — RUC: 20614003546</div>
+      <div style="font-size:11px;color:#555">adm@tycsmg.com · www.tycsmg.com · Tel: +51 943 435 224</div>
+    </div>
+  </div>
+  <div style="text-align:right;font-size:11px;color:#555">
+    <div style="font-weight:700;font-size:13px;color:#375623">${c.num}</div>
+    <div>Fecha cierre: <strong>${proy.fechaCierre||fecha}</strong></div>
+  </div>
+</div>
+
+<h2>1. Datos del Proyecto</h2>
+<table>
+  <tr><th style="width:180px">Cliente</th><td style="padding:5px 8px;border:1px solid #ddd">${c.cliente}${c.ruc?' — RUC: '+c.ruc:''}</td></tr>
+  <tr><th>Servicio</th><td style="padding:5px 8px;border:1px solid #ddd">${c.desc||'—'}</td></tr>
+  <tr><th>Ubicación</th><td style="padding:5px 8px;border:1px solid #ddd">${c.lugar||'—'}</td></tr>
+  <tr><th>Supervisor</th><td style="padding:5px 8px;border:1px solid #ddd">${proy.supervisor||'—'}</td></tr>
+  <tr><th>Inicio</th><td style="padding:5px 8px;border:1px solid #ddd">${proy.fechaInicio||'—'}</td></tr>
+  <tr><th>Término</th><td style="padding:5px 8px;border:1px solid #ddd">${proy.fechaFin||'—'}</td></tr>
+  <tr><th>Cierre</th><td style="padding:5px 8px;border:1px solid #ddd">${proy.fechaCierre||fecha}</td></tr>
+</table>
+
+<h2>2. Resumen Económico</h2>
+<div class="kpi">
+  <div class="kpi-box"><div class="kpi-label">Total cotizado</div><div class="kpi-val" style="color:#1F3864">${fmt(totalCot)}</div></div>
+  <div class="kpi-box"><div class="kpi-label">Total gastado</div><div class="kpi-val" style="color:#854F0B">${fmt(totalGasto)}</div></div>
+  <div class="kpi-box"><div class="kpi-label">Margen real</div><div class="kpi-val" style="color:${margen>=0?'#375623':'#C00000'}">${fmt(margen)}</div></div>
+  <div class="kpi-box"><div class="kpi-label">Personal</div><div class="kpi-val" style="color:#555">${proy.personal.length}</div></div>
+</div>
+
+${matRows?`<h2>3. Control de Materiales</h2>
+<table><tr><th>Descripción</th><th>Cantidad</th><th>Estado</th><th style="text-align:right">Costo real</th></tr>${matRows}</table>`:''}
+
+${gastoRows?`<h2>4. Gastos Adicionales</h2>
+<table><tr><th>Descripción</th><th>Fecha</th><th style="text-align:right">Monto</th></tr>${gastoRows}<tr><th colspan="2" style="text-align:right;padding:5px 8px;background:#f5f5f5">Total gastos extra:</th><td style="padding:5px 8px;border:1px solid #ddd;font-weight:700;text-align:right">S/ ${fmtN(gastoExtra)}</td></tr></table>`:''}
+
+${persRows?`<h2>5. Personal del Proyecto</h2>
+<table><tr><th>Nombre</th><th>Cargo</th><th>DNI</th><th>Certificaciones</th></tr>${persRows}</table>`:''}
+
+<h2>${matRows||gastoRows||persRows?'6':'3'}. Cumplimiento de Requisitos SIG</h2>
+<table><tr><th>Requisito</th><th style="text-align:center;width:120px">Estado</th><th>Documento adjunto</th></tr>${reqRows}</table>
+
+${proy.obsFinal?`<h2>Observaciones Finales</h2><p style="background:#F9FBE7;border-left:4px solid #375623;padding:10px 14px;border-radius:4px">${proy.obsFinal}</p>`:''}
+
+<div style="margin-top:36px;display:grid;grid-template-columns:1fr 1fr;gap:40px">
+  <div style="text-align:center">
+    <div style="height:52px;border-bottom:1px solid #333;margin-bottom:6px"></div>
+    <div style="font-weight:700">TYC SERVICIOS Y MANTENIMIENTO GENERALES S.R.L.</div>
+    <div style="font-size:11px;color:#555">José Moncada Lluen — Gerente General</div>
+  </div>
+  <div style="text-align:center">
+    <div style="height:52px;border-bottom:1px solid #333;margin-bottom:6px"></div>
+    <div style="font-weight:700">${c.cliente}</div>
+    <div style="font-size:11px;color:#555">V°B° de conformidad del servicio</div>
+  </div>
+</div>
+</body></html>`);
+  win.document.close();
 }
 
 function cargarDesdeHistorico(id){
