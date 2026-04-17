@@ -755,14 +755,16 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
         </div>
       </div>
 
-      <!-- ═══ FIRMA DIGITAL ═══ -->
+      <!-- ═══ FIRMA DEL REPRESENTANTE ═══ -->
       <div class="card" style="margin-top:20px">
         <div class="card-header" style="background:#1F3864;border-radius:10px 10px 0 0">
           <span class="card-title" style="color:#fff">✍ Firma del Representante</span>
           <span style="font-size:11px;color:rgba(255,255,255,0.6)">Opcional — aparece en la cotización</span>
         </div>
         <div class="card-body">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px">
+
+          <!-- Nombre y cargo -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px">
             <div class="form-group">
               <label class="form-label">Nombre del firmante</label>
               <input type="text" class="form-control" id="firma-nombre" value="José Moncada Lluen" style="background:var(--yellow)">
@@ -773,32 +775,83 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
             </div>
           </div>
 
-          <!-- Canvas de firma -->
-          <div style="margin-bottom:10px">
-            <label class="form-label" style="margin-bottom:6px;display:block">Firma digital <span style="font-size:10px;color:var(--text3);font-weight:400">— dibuja tu firma con el ratón o dedo</span></label>
+          <!-- Selector de tipo de firma -->
+          <div style="margin-bottom:14px">
+            <label class="form-label" style="margin-bottom:8px;display:block">Tipo de firma</label>
+            <div style="display:flex;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;width:fit-content">
+              <button id="btn-tipo-dibujar" onclick="setTipoFirma('dibujar')"
+                style="padding:8px 18px;font-size:12px;font-weight:600;border:none;cursor:pointer;background:#1F3864;color:#fff;display:flex;align-items:center;gap:6px">
+                ✏️ Dibujar firma
+              </button>
+              <button id="btn-tipo-subir" onclick="setTipoFirma('subir')"
+                style="padding:8px 18px;font-size:12px;font-weight:500;border:none;border-left:1px solid var(--border);cursor:pointer;background:var(--surface2);color:var(--text2);display:flex;align-items:center;gap:6px">
+                📁 Subir imagen
+              </button>
+            </div>
+          </div>
+
+          <!-- PANEL: Dibujar firma -->
+          <div id="firma-panel-dibujar">
             <div style="position:relative;border:2px solid var(--border);border-radius:8px;overflow:hidden;background:#fff;cursor:crosshair" id="firma-wrap">
-              <canvas id="firma-canvas" width="600" height="160"
-                style="display:block;width:100%;height:160px;touch-action:none"></canvas>
-              <div id="firma-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:.35">
-                <span style="font-size:13px;color:#555;font-style:italic">Firma aquí</span>
+              <canvas id="firma-canvas" width="700" height="180"
+                style="display:block;width:100%;height:180px;touch-action:none"></canvas>
+              <div id="firma-placeholder" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:.3">
+                <div style="text-align:center">
+                  <div style="font-size:32px;margin-bottom:4px">✍</div>
+                  <div style="font-size:13px;color:#555;font-style:italic">Dibuja tu firma aquí</div>
+                  <div style="font-size:11px;color:#888;margin-top:2px">Ratón o dedo (táctil)</div>
+                </div>
               </div>
             </div>
-            <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
-              <button class="btn btn-outline btn-sm" onclick="limpiarFirma()">✕ Limpiar firma</button>
-              <div style="display:flex;align-items:center;gap:6px;margin-left:4px">
+            <div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">
+              <button class="btn btn-outline btn-sm" onclick="limpiarFirma()">✕ Limpiar</button>
+              <div style="display:flex;align-items:center;gap:6px">
                 <label style="font-size:11px;color:var(--text2)">Color:</label>
                 <input type="color" id="firma-color" value="#1F3864"
-                  style="width:28px;height:28px;border:none;padding:0;cursor:pointer;border-radius:4px;background:none">
+                  style="width:28px;height:28px;border:1px solid var(--border);padding:2px;cursor:pointer;border-radius:4px">
                 <label style="font-size:11px;color:var(--text2)">Grosor:</label>
                 <select id="firma-grosor" style="font-size:11px;padding:3px 6px;border:1px solid var(--border);border-radius:4px">
                   <option value="1.5">Fino</option>
                   <option value="2.5" selected>Normal</option>
                   <option value="4">Grueso</option>
+                  <option value="6">Grueso+</option>
                 </select>
               </div>
-              <span id="firma-status" style="margin-left:auto;font-size:11px;color:var(--green);display:none">✓ Firma registrada</span>
+              <span id="firma-status" style="margin-left:auto;font-size:11px;color:var(--green);display:none">✓ Firma lista</span>
             </div>
           </div>
+
+          <!-- PANEL: Subir imagen de firma -->
+          <div id="firma-panel-subir" style="display:none">
+            <div id="firma-upload-area"
+              style="border:2px dashed var(--border);border-radius:8px;background:var(--surface2);text-align:center;padding:24px 16px;cursor:pointer;transition:border-color .2s"
+              onclick="document.getElementById('firma-file-input').click()"
+              ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+              ondragleave="this.style.borderColor='var(--border)'"
+              ondrop="firmaDropHandler(event)">
+              <div style="font-size:32px;margin-bottom:8px">📁</div>
+              <div style="font-size:13px;font-weight:500;color:var(--text)">Haz clic o arrastra tu imagen de firma</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:4px">PNG, JPG, JPEG, GIF, WEBP, BMP — máx 2 MB</div>
+              <input type="file" id="firma-file-input" accept="image/png,image/jpeg,image/jpg,image/gif,image/webp,image/bmp"
+                style="display:none" onchange="firmaCargarArchivo(this)">
+            </div>
+            <!-- Preview de imagen subida -->
+            <div id="firma-img-preview" style="display:none;margin-top:12px">
+              <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:#fff;padding:12px;display:flex;align-items:center;gap:12px">
+                <img id="firma-img-el" style="max-height:80px;max-width:220px;object-fit:contain;display:block">
+                <div style="flex:1">
+                  <div id="firma-img-name" style="font-size:12px;font-weight:500;color:var(--text)"></div>
+                  <div id="firma-img-size" style="font-size:11px;color:var(--text3);margin-top:2px"></div>
+                  <div style="margin-top:8px;display:flex;gap:6px">
+                    <button class="btn btn-outline btn-sm" onclick="limpiarFirmaImg()">✕ Quitar</button>
+                    <button class="btn btn-outline btn-sm" onclick="document.getElementById('firma-file-input').click()">↺ Cambiar</button>
+                  </div>
+                </div>
+                <span style="font-size:11px;color:var(--green);font-weight:500">✓ Lista</span>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -2417,16 +2470,33 @@ async function recargarFoto(i, input){
 }
 
 // ─── FIRMA DIGITAL ────────────────────────────────────────────────────────
-let firmaDrawing = false;
-let firmaHasData = false;
-let firmaCtx = null;
+let firmaDrawing  = false;
+let firmaHasData  = false;
+let firmaImgData  = null;   // dataUrl de imagen subida
+let firmaTipo     = 'dibujar'; // 'dibujar' | 'subir'
+let firmaCtx      = null;
+
+function setTipoFirma(tipo){
+  firmaTipo = tipo;
+  const panelD = document.getElementById('firma-panel-dibujar');
+  const panelS = document.getElementById('firma-panel-subir');
+  const btnD   = document.getElementById('btn-tipo-dibujar');
+  const btnS   = document.getElementById('btn-tipo-subir');
+  if(panelD) panelD.style.display = tipo==='dibujar' ? 'block' : 'none';
+  if(panelS) panelS.style.display = tipo==='subir'   ? 'block' : 'none';
+  if(btnD){ btnD.style.background = tipo==='dibujar' ? '#1F3864' : 'var(--surface2)';
+            btnD.style.color      = tipo==='dibujar' ? '#fff'    : 'var(--text2)'; }
+  if(btnS){ btnS.style.background = tipo==='subir'   ? '#1F3864' : 'var(--surface2)';
+            btnS.style.color      = tipo==='subir'   ? '#fff'    : 'var(--text2)'; }
+  if(tipo==='dibujar') initFirmaCanvas();
+}
 
 function initFirmaCanvas(){
   const canvas = document.getElementById('firma-canvas');
   if(!canvas || canvas._firmaInit) return;
   canvas._firmaInit = true;
   firmaCtx = canvas.getContext('2d');
-  firmaCtx.lineCap = 'round';
+  firmaCtx.lineCap  = 'round';
   firmaCtx.lineJoin = 'round';
 
   const getPos = (e)=>{
@@ -2437,32 +2507,24 @@ function initFirmaCanvas(){
     return { x:(src.clientX-r.left)*scaleX, y:(src.clientY-r.top)*scaleY };
   };
   const startDraw = (e)=>{
-    e.preventDefault();
-    firmaDrawing = true;
-    firmaCtx.beginPath();
-    const p = getPos(e);
-    firmaCtx.moveTo(p.x, p.y);
+    e.preventDefault(); firmaDrawing = true;
+    firmaCtx.beginPath(); const p = getPos(e); firmaCtx.moveTo(p.x,p.y);
   };
   const draw = (e)=>{
-    if(!firmaDrawing) return;
-    e.preventDefault();
-    const color  = document.getElementById('firma-color').value||'#1F3864';
-    const grosor = parseFloat(document.getElementById('firma-grosor').value)||2.5;
-    firmaCtx.strokeStyle = color;
-    firmaCtx.lineWidth   = grosor;
+    if(!firmaDrawing) return; e.preventDefault();
+    const color  = document.getElementById('firma-color')?.value||'#1F3864';
+    const grosor = parseFloat(document.getElementById('firma-grosor')?.value)||2.5;
+    firmaCtx.strokeStyle = color; firmaCtx.lineWidth = grosor;
     const p = getPos(e);
-    firmaCtx.lineTo(p.x, p.y);
-    firmaCtx.stroke();
-    firmaCtx.beginPath();
-    firmaCtx.moveTo(p.x, p.y);
+    firmaCtx.lineTo(p.x,p.y); firmaCtx.stroke();
+    firmaCtx.beginPath(); firmaCtx.moveTo(p.x,p.y);
     firmaHasData = true;
     const ph = document.getElementById('firma-placeholder');
-    if(ph) ph.style.display = 'none';
+    if(ph) ph.style.display='none';
     const st = document.getElementById('firma-status');
-    if(st) st.style.display = 'inline';
+    if(st) st.style.display='inline';
   };
-  const endDraw = ()=>{ firmaDrawing = false; firmaCtx && firmaCtx.beginPath(); };
-
+  const endDraw = ()=>{ firmaDrawing=false; firmaCtx&&firmaCtx.beginPath(); };
   canvas.addEventListener('mousedown',  startDraw);
   canvas.addEventListener('mousemove',  draw);
   canvas.addEventListener('mouseup',    endDraw);
@@ -2472,7 +2534,11 @@ function initFirmaCanvas(){
   canvas.addEventListener('touchend',   endDraw);
 }
 
+// Obtiene el dataUrl de la firma según el tipo activo
 function getFirmaDataUrl(){
+  if(firmaTipo==='subir'){
+    return firmaImgData || null;
+  }
   if(!firmaHasData) return null;
   const canvas = document.getElementById('firma-canvas');
   return canvas ? canvas.toDataURL('image/png') : null;
@@ -2480,14 +2546,65 @@ function getFirmaDataUrl(){
 
 function limpiarFirma(){
   const canvas = document.getElementById('firma-canvas');
-  if(!canvas) return;
-  const ctx = canvas.getContext('2d');
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if(canvas){ const ctx=canvas.getContext('2d'); ctx.clearRect(0,0,canvas.width,canvas.height); }
   firmaHasData = false;
   const ph = document.getElementById('firma-placeholder');
-  if(ph) ph.style.display = 'flex';
+  if(ph) ph.style.display='flex';
   const st = document.getElementById('firma-status');
-  if(st) st.style.display = 'none';
+  if(st) st.style.display='none';
+}
+
+// ── Subir imagen de firma ────────────────────────────────────────
+function firmaCargarArchivo(input){
+  const file = input.files[0];
+  if(!file) return;
+  const maxMB = 2;
+  if(file.size > maxMB*1024*1024){
+    showNotif(`La imagen es demasiado grande (${(file.size/1024/1024).toFixed(1)} MB). Máximo ${maxMB} MB.`,'error');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    firmaImgData = e.target.result;
+    firmaHasData = true;
+    // Show preview
+    const prev = document.getElementById('firma-img-preview');
+    const area  = document.getElementById('firma-upload-area');
+    const imgEl = document.getElementById('firma-img-el');
+    const nameEl= document.getElementById('firma-img-name');
+    const sizeEl= document.getElementById('firma-img-size');
+    if(imgEl)  imgEl.src = firmaImgData;
+    if(nameEl) nameEl.textContent = file.name;
+    if(sizeEl) sizeEl.textContent = (file.size/1024).toFixed(0)+' KB · '+file.type.replace('image/','').toUpperCase();
+    if(prev)   prev.style.display='block';
+    if(area)   area.style.display='none';
+    showNotif('Imagen de firma cargada correctamente');
+  };
+  reader.readAsDataURL(file);
+}
+
+function firmaDropHandler(e){
+  e.preventDefault();
+  e.currentTarget.style.borderColor='var(--border)';
+  const file = e.dataTransfer.files[0];
+  if(!file || !file.type.startsWith('image/')){
+    showNotif('Solo se aceptan imágenes','error'); return;
+  }
+  const input = document.getElementById('firma-file-input');
+  const dt = new DataTransfer(); dt.items.add(file);
+  input.files = dt.files;
+  firmaCargarArchivo(input);
+}
+
+function limpiarFirmaImg(){
+  firmaImgData = null;
+  firmaHasData = false;
+  const prev = document.getElementById('firma-img-preview');
+  const area  = document.getElementById('firma-upload-area');
+  const input = document.getElementById('firma-file-input');
+  if(prev)  prev.style.display='none';
+  if(area)  area.style.display='block';
+  if(input) input.value='';
 }
 
 function limpiarRelatorio(){
@@ -3838,6 +3955,7 @@ function guardarEnHistorico(){
     ahorro: ahorroH,
     precioCliente,
     firma: firmaData,
+    firmaTipo,
     firmaNombre,
     firmaCargo,
     estado:    'Guardada',
@@ -3984,28 +4102,47 @@ function cargarDesdeHistorico(id){
   }
   // Restore firma
   setTimeout(()=>{
-    initFirmaCanvas();
     const elNombre = document.getElementById('firma-nombre');
     const elCargo  = document.getElementById('firma-cargo');
     if(elNombre) elNombre.value = c.firmaNombre||'José Moncada Lluen';
     if(elCargo)  elCargo.value  = c.firmaCargo||'Representante Legal';
     if(c.firma){
-      const canvas = document.getElementById('firma-canvas');
-      if(canvas){
-        const ctx = canvas.getContext('2d');
-        const img = new Image();
-        img.onload = ()=>{
-          ctx.clearRect(0,0,canvas.width,canvas.height);
-          ctx.drawImage(img,0,0);
-          firmaHasData = true;
-          const ph = document.getElementById('firma-placeholder');
-          if(ph) ph.style.display='none';
-          const st = document.getElementById('firma-status');
-          if(st) st.style.display='inline';
-        };
-        img.src = c.firma;
+      // Detect tipo by checking if it was a drawn or uploaded signature
+      const tipo = c.firmaTipo || 'dibujar';
+      setTipoFirma(tipo);
+      if(tipo==='subir'){
+        firmaImgData = c.firma;
+        firmaHasData = true;
+        const imgEl  = document.getElementById('firma-img-el');
+        const nameEl = document.getElementById('firma-img-name');
+        const sizeEl = document.getElementById('firma-img-size');
+        const prev   = document.getElementById('firma-img-preview');
+        const area   = document.getElementById('firma-upload-area');
+        if(imgEl)  imgEl.src = c.firma;
+        if(nameEl) nameEl.textContent = 'Firma cargada desde historial';
+        if(sizeEl) sizeEl.textContent = '';
+        if(prev)   prev.style.display='block';
+        if(area)   area.style.display='none';
+      } else {
+        initFirmaCanvas();
+        const canvas = document.getElementById('firma-canvas');
+        if(canvas){
+          const ctx = canvas.getContext('2d');
+          const img = new Image();
+          img.onload = ()=>{
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.drawImage(img,0,0);
+            firmaHasData = true;
+            const ph = document.getElementById('firma-placeholder');
+            if(ph) ph.style.display='none';
+            const st = document.getElementById('firma-status');
+            if(st) st.style.display='inline';
+          };
+          img.src = c.firma;
+        }
       }
     } else {
+      setTipoFirma('dibujar');
       limpiarFirma();
     }
   },150);
