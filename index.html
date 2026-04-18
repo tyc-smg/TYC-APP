@@ -1218,21 +1218,43 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
 
 <!-- ═══════════════ PAGE: HISTORICO COTIZACIONES ═══════════════ -->
 <div class="page" id="page-historico">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:12px">
     <div>
       <h2 style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:var(--accent)">Historial de Cotizaciones</h2>
-      <div style="font-size:12px;color:var(--text2);margin-top:3px"><span id="hist-count">0</span> cotizaciones guardadas</div>
+      <div style="font-size:12px;color:var(--text2);margin-top:3px"><span id="hist-count">0</span> cotizaciones · total: <span id="hist-total-sum" style="font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--green)">S/ 0.00</span></div>
     </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <select id="hist-filter-estado" class="filter-select" onchange="renderHistorico()">
-        <option value="">Todos los estados</option>
-        <option>Guardada</option><option>Enviada</option><option>Aprobada</option><option>Rechazada</option>
-      </select>
-      <button class="btn btn-success btn-sm" onclick="subirHistorialDrive()" id="btn-hist-upload" title="Guarda el historial completo en Drive">△ Subir a Drive</button>
-      <button class="btn btn-outline btn-sm" onclick="cargarHistorialDrive()" id="btn-hist-download" title="Carga el historial guardado en Drive">↓ Cargar desde Drive</button>
-      <button class="btn btn-outline btn-sm" onclick="exportarHistoricoCSV()">↓ Exportar CSV</button>
-      <button class="btn btn-primary btn-sm" onclick="switchPage('cotizacion')">+ Nueva cotización</button>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-success btn-sm" onclick="subirHistorialDrive()" id="btn-hist-upload">△ Drive</button>
+      <button class="btn btn-outline btn-sm" onclick="cargarHistorialDrive()" id="btn-hist-download">↓ Drive</button>
+      <button class="btn btn-outline btn-sm" onclick="exportarHistoricoCSV()">↓ CSV</button>
+      <button class="btn btn-danger btn-sm" onclick="eliminarTodoHistorico()" title="Eliminar todo el historial">🗑 Limpiar todo</button>
+      <button class="btn btn-primary btn-sm" onclick="switchPage('cotizacion')">+ Nueva</button>
     </div>
+  </div>
+
+  <!-- Filtros -->
+  <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:12px 16px;margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <div class="search-box" style="flex:1;min-width:200px">
+      <input type="text" id="hist-search" placeholder="Buscar por N° cotización, cliente, descripción, lugar..." oninput="renderHistorico()" style="width:100%">
+    </div>
+    <select id="hist-filter-estado" class="filter-select" onchange="renderHistorico()">
+      <option value="">Todos los estados</option>
+      <option>Guardada</option><option>Enviada</option><option>Aprobada</option><option>Rechazada</option>
+    </select>
+    <select id="hist-filter-año" class="filter-select" onchange="renderHistorico()">
+      <option value="">Todos los años</option>
+      <option>2026</option><option>2025</option><option>2024</option>
+    </select>
+    <select id="hist-sort" class="filter-select" onchange="renderHistorico()">
+      <option value="fecha_desc">Más reciente primero</option>
+      <option value="fecha_asc">Más antiguo primero</option>
+      <option value="total_desc">Mayor valor</option>
+      <option value="total_asc">Menor valor</option>
+      <option value="num_desc">N° cotización ↓</option>
+      <option value="num_asc">N° cotización ↑</option>
+      <option value="cliente_asc">Cliente A→Z</option>
+    </select>
+    <button class="btn btn-outline btn-sm" onclick="limpiarFiltrosHistorico()">✕ Limpiar filtros</button>
   </div>
 
   <div id="hist-lista" style="display:flex;flex-direction:column;gap:12px">
@@ -4274,18 +4296,60 @@ function guardarEnHistorico(){
   updateDashboard();
 }
 
-function renderHistorico(){
-  const estadoFilter = document.getElementById('hist-filter-estado').value;
-  const lista = document.getElementById('hist-lista');
-  const countEl = document.getElementById('hist-count');
+function limpiarFiltrosHistorico(){
+  const els = ['hist-search','hist-filter-estado','hist-filter-año'];
+  els.forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  const sort = document.getElementById('hist-sort');
+  if(sort) sort.value='fecha_desc';
+  renderHistorico();
+}
 
-  const filtered = historicoCot.filter(c=>!estadoFilter||c.estado===estadoFilter);
-  countEl.textContent = filtered.length;
+function renderHistorico(){
+  const q       = (document.getElementById('hist-search')?.value||'').toLowerCase().trim();
+  const estado  = document.getElementById('hist-filter-estado')?.value||'';
+  const año     = document.getElementById('hist-filter-año')?.value||'';
+  const sort    = document.getElementById('hist-sort')?.value||'fecha_desc';
+  const lista   = document.getElementById('hist-lista');
+  const countEl = document.getElementById('hist-count');
+  const sumEl   = document.getElementById('hist-total-sum');
+
+  // Filter
+  let filtered = historicoCot.filter(c=>{
+    if(estado && c.estado !== estado) return false;
+    if(año    && !(c.num||'').includes(año) && !(c.fecha||'').includes(año) && !(c.savedAt||'').includes(año)) return false;
+    if(q){
+      const hay = (c.num+c.cliente+c.ruc+c.desc+c.lugar+c.cat).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  // Sort
+  filtered.sort((a,b)=>{
+    switch(sort){
+      case 'fecha_asc':   return new Date(a.savedAt||0)-new Date(b.savedAt||0);
+      case 'total_desc':  return (b.totalConIGV||0)-(a.totalConIGV||0);
+      case 'total_asc':   return (a.totalConIGV||0)-(b.totalConIGV||0);
+      case 'num_desc':    return (b.num||'').localeCompare(a.num||'');
+      case 'num_asc':     return (a.num||'').localeCompare(b.num||'');
+      case 'cliente_asc': return (a.cliente||'').localeCompare(b.cliente||'');
+      default:            return new Date(b.savedAt||0)-new Date(a.savedAt||0);
+    }
+  });
+
+  // Update counters
+  const totalSum = filtered.reduce((s,c)=>s+(c.totalConIGV||0),0);
+  if(countEl) countEl.textContent = filtered.length;
+  if(sumEl)   sumEl.textContent   = fmt(totalSum);
 
   if(!filtered.length){
-    lista.innerHTML = `<div class="empty-state"><div class="empty-icon">◑</div><div class="empty-text">No hay cotizaciones${estadoFilter?' con estado "'+estadoFilter+'"':''} en el historial.<br>Ve a Vista Previa y presiona "Guardar en historial".</div></div>`;
+    lista.innerHTML = `<div class="empty-state"><div class="empty-icon">◑</div><div class="empty-text">${q||estado||año?'No hay cotizaciones que coincidan con los filtros aplicados.':'Aún no hay cotizaciones guardadas.<br>Ve a Vista Previa y presiona "Guardar en historial".'}</div></div>`;
     return;
   }
+
+  const estadoColors = {
+    'Guardada':'#1F3864','Enviada':'#854F0B','Aprobada':'#375623','Rechazada':'#A32D2D'
+  };
 
   lista.innerHTML = filtered.map(c=>{
     const estadoClass = {
@@ -4295,44 +4359,67 @@ function renderHistorico(){
 
     const fechaFmt = c.fecha ? new Date(c.fecha+'T12:00').toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
     const savedFmt = c.savedAt ? new Date(c.savedAt).toLocaleString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+    const descPctVal = c.descuento||0;
+    const precioFinal = descPctVal>0 ? (c.totalConIGV*(1-descPctVal/100)) : c.totalConIGV;
 
     return `<div class="hist-card" id="hc-${c.id}">
-      <div>
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+      <div style="min-width:0">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
           <span class="hist-num">${c.num}</span>
           <span class="badge-estado ${estadoClass}">${c.estado}</span>
-          ${c.cat?`<span style="font-size:11px;color:var(--text3)">${c.cat}</span>`:''}
+          ${c.cat?`<span style="font-size:11px;color:var(--text3);background:var(--surface2);padding:2px 6px;border-radius:4px">${c.cat}</span>`:''}
+          ${c.firma?'<span style="font-size:10px;color:var(--green);font-weight:600">✍ Firmada</span>':''}
         </div>
-        <div class="hist-cliente">${c.cliente}${c.ruc?` — RUC: ${c.ruc}`:''}</div>
-        <div class="hist-meta">
-          ${c.desc||''}${c.lugar?` • ${c.lugar}`:''}${c.validez?` • Validez: ${c.validez}`:''}
-        </div>
-        <div class="hist-meta" style="margin-top:3px">Pago: ${c.condpago||'—'} • Guardado: ${savedFmt}</div>
+        <div class="hist-cliente">${c.cliente}${c.ruc?` <span style="font-size:11px;color:var(--text3);font-weight:400">RUC: ${c.ruc}</span>`:''}</div>
+        <div class="hist-meta">${c.desc||''}${c.lugar?` <b>·</b> ${c.lugar}`:''}${c.validez?` <b>·</b> ${c.validez}`:''}</div>
+        <div class="hist-meta" style="margin-top:2px;color:var(--text3)">Pago: ${c.condpago||'—'} · ${savedFmt}</div>
       </div>
-      <div>
-        <div class="hist-total">${fmt(c.totalConIGV)}</div>
+      <div style="text-align:right;flex-shrink:0">
+        <div class="hist-total">${fmt(precioFinal)}</div>
+        ${descPctVal>0?`<div style="font-size:10px;color:#854F0B;font-weight:500">−${descPctVal}% desc.</div>`:''}
         <div class="hist-fecha">${fechaFmt}</div>
       </div>
-      <div class="hist-actions">
+      <div class="hist-actions" style="flex-wrap:wrap">
         <button class="btn btn-primary btn-sm" onclick="cargarDesdeHistorico(${c.id})">↺ Cargar</button>
-        <button class="btn btn-outline btn-sm" onclick="verHistorico(${c.id})">◈ Ver PDF</button>
-        <select class="filter-select" style="font-size:11px;padding:5px 8px" onchange="cambiarEstado(${c.id},this.value)">
+        <button class="btn btn-outline btn-sm" onclick="verHistorico(${c.id})">◈ PDF</button>
+        <select class="filter-select" style="font-size:11px;padding:4px 6px" onchange="cambiarEstado(${c.id},this.value)">
           <option value="Guardada"${c.estado==='Guardada'?' selected':''}>Guardada</option>
           <option value="Enviada"${c.estado==='Enviada'?' selected':''}>Enviada</option>
           <option value="Aprobada"${c.estado==='Aprobada'?' selected':''}>Aprobada</option>
           <option value="Rechazada"${c.estado==='Rechazada'?' selected':''}>Rechazada</option>
         </select>
-        <button class="btn btn-danger btn-sm" onclick="eliminarHistorico(${c.id})">✕</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminarHistorico(${c.id})" title="Eliminar cotización">🗑</button>
       </div>
       ${c.estado==='Aprobada'?`
       <div style="grid-column:1/-1;background:linear-gradient(90deg,#E8F5E9,#F1F8E9);border-top:1px solid #A5D6A7;padding:10px 14px;border-radius:0 0 10px 10px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <span style="font-size:11px;font-weight:600;color:#375623;text-transform:uppercase;letter-spacing:.5px">🎯 Proyecto aprobado — Acciones:</span>
-        <button class="btn btn-sm" onclick="abrirProyecto(${c.id},'inicio')" style="background:#1F3864;color:#fff;border:none;gap:4px">🚀 Inicio de Operaciones</button>
+        <span style="font-size:11px;font-weight:600;color:#375623;text-transform:uppercase;letter-spacing:.5px">🎯 Proyecto aprobado:</span>
+        <button class="btn btn-sm" onclick="abrirProyecto(${c.id},'inicio')" style="background:#1F3864;color:#fff;border:none">🚀 Inicio</button>
         <button class="btn btn-sm" onclick="abrirProyecto(${c.id},'proceso')" style="background:#854F0B;color:#fff;border:none">⚙ En Proceso</button>
-        <button class="btn btn-sm" onclick="abrirProyecto(${c.id},'finalizado')" style="background:#375623;color:#fff;border:none">✓ Trabajo Finalizado</button>
+        <button class="btn btn-sm" onclick="abrirProyecto(${c.id},'finalizado')" style="background:#375623;color:#fff;border:none">✓ Finalizado</button>
       </div>`:''}
     </div>`;
   }).join('');
+}
+
+function eliminarHistorico(id){
+  const c = historicoCot.find(h=>h.id===id);
+  if(!c) return;
+  if(!confirm(`¿Eliminar la cotización ${c.num} — ${c.cliente}?\n\nEsta acción no se puede deshacer.`)) return;
+  historicoCot = historicoCot.filter(h=>h.id!==id);
+  saveHistorico();
+  showNotif(`Cotización ${c.num} eliminada`);
+  renderHistorico();
+  updateDashboard();
+}
+
+function eliminarTodoHistorico(){
+  if(!historicoCot.length){ showNotif('El historial ya está vacío','error'); return; }
+  if(!confirm(`¿Eliminar TODO el historial?\n${historicoCot.length} cotizaciones serán eliminadas permanentemente.\n\nEsta acción NO se puede deshacer.`)) return;
+  historicoCot = [];
+  saveHistorico();
+  showNotif('Historial limpiado');
+  renderHistorico();
+  updateDashboard();
 }
 
 function cambiarEstado(id, estado){
@@ -4340,13 +4427,12 @@ function cambiarEstado(id, estado){
   if(idx>=0){
     historicoCot[idx].estado = estado;
     saveHistorico();
-    // Show/hide tab proyecto
     if(estado==='Aprobada'){
       const tab = document.getElementById('tab-proyecto');
       if(tab) tab.style.display='flex';
     }
   }
-  showNotif('Estado actualizado: '+estado);
+  showNotif('Estado: '+estado);
   renderHistorico();
 }
 
