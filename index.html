@@ -1792,6 +1792,56 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
           <a href="https://drive.google.com/drive/folders/1Z7HuRjfjWXOgjwBX9GElgXHFnqV2B9pm" target="_blank" class="btn btn-primary" style="width:100%;justify-content:center;text-decoration:none">⤤ Abrir carpeta de Drive</a>
         </div>
       </div>
+
+      <!-- ══ RECUPERACIÓN DE DATOS ══ -->
+      <div class="card" style="border:2px solid #854F0B">
+        <div class="card-header" style="background:#854F0B;border-radius:10px 10px 0 0">
+          <span class="card-title" style="color:#fff">🔄 Recuperar datos guardados</span>
+          <span style="font-size:10px;color:rgba(255,255,255,.7)">localStorage del navegador</span>
+        </div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:14px">
+
+          <!-- Info -->
+          <div style="background:#FEF9EE;border:1px solid #F0D080;border-radius:8px;padding:10px 12px;font-size:12px;color:#5A3E00;line-height:1.6">
+            <strong>¿Perdiste datos?</strong> Si trabajaste en este mismo navegador y computadora, tus datos siguen guardados localmente. Presiona <strong>Escanear</strong> para detectarlos y recuperarlos.
+          </div>
+
+          <!-- Scanner -->
+          <div style="background:var(--surface2);border-radius:8px;padding:12px 14px">
+            <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Paso 1 — Escanear datos guardados</div>
+            <button class="btn btn-primary" onclick="escanearLocalStorage()" style="width:100%;justify-content:center">🔍 Escanear ahora</button>
+            <div id="scan-resultado" style="margin-top:10px;display:none;flex-direction:column;gap:8px"></div>
+          </div>
+
+          <!-- Restore -->
+          <div style="background:var(--surface2);border-radius:8px;padding:12px 14px" id="scan-restore-block" style="display:none">
+            <div style="font-size:11px;font-weight:600;color:#375623;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Paso 2 — Restaurar</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <button class="btn btn-success" onclick="restaurarHistorico()" id="btn-rest-hist" style="width:100%;justify-content:center;display:none">↺ Restaurar Historial de cotizaciones</button>
+              <button class="btn btn-success" onclick="restaurarPapelera()" id="btn-rest-pap" style="width:100%;justify-content:center;display:none">↺ Restaurar Papelera</button>
+            </div>
+          </div>
+
+          <div style="border-top:1px solid var(--border2);padding-top:10px">
+            <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px">Backup manual — Exportar TODO</div>
+            <button class="btn btn-outline" onclick="exportarBackupCompleto()" style="width:100%;justify-content:center">💾 Descargar backup completo (.json)</button>
+            <div style="font-size:11px;color:var(--text3);margin-top:6px">Guarda cotizaciones + papelera + config en un archivo de respaldo</div>
+          </div>
+
+          <div style="border-top:1px solid var(--border2);padding-top:10px">
+            <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px">Importar backup</div>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 12px;border:2px dashed var(--border);border-radius:7px;background:var(--yellow)">
+              <span style="font-size:18px">📂</span>
+              <div style="flex:1">
+                <div style="font-size:12px;font-weight:500;color:var(--accent)">Seleccionar archivo de backup</div>
+                <div id="backup-file-name" style="font-size:10px;color:var(--text3);margin-top:1px">Ningún archivo seleccionado</div>
+              </div>
+              <input type="file" accept=".json" style="display:none" onchange="importarBackup(this)">
+            </label>
+          </div>
+
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -3830,7 +3880,240 @@ let driveConfig = {url: '', folderId: '1Z7HuRjfjWXOgjwBX9GElgXHFnqV2B9pm'};
 let pendingChanges = [];
 let driveConnected = false;
 
-// Load config from localStorage on start
+// ─── RECUPERACIÓN DE DATOS ──────────────────────────────────────────────────
+function escanearLocalStorage(){
+  var resultado = document.getElementById('scan-resultado');
+  var restBlock = document.getElementById('scan-restore-block');
+  var btnHist   = document.getElementById('btn-rest-hist');
+  var btnPap    = document.getElementById('btn-rest-pap');
+  resultado.style.display = 'flex';
+
+  var items = [];
+  var allKeys = [];
+  for(var i=0; i<localStorage.length; i++) allKeys.push(localStorage.key(i));
+
+  // Check tyc_historico
+  var rawHist = localStorage.getItem('tyc_historico');
+  var histData = [];
+  if(rawHist){
+    try{
+      histData = JSON.parse(rawHist);
+      var total = histData.reduce(function(s,c){return s+(c.totalConIGV||0);},0);
+      items.push({
+        key:'tyc_historico', label:'Historial de cotizaciones',
+        count: histData.length,
+        detail: histData.length+' cotizaciones — Total: '+fmt(total),
+        color:'#375623', icon:'◑', data: histData
+      });
+    }catch(e){}
+  }
+
+  // Check tyc_papelera
+  var rawPap = localStorage.getItem('tyc_papelera');
+  var papData = [];
+  if(rawPap){
+    try{
+      papData = JSON.parse(rawPap);
+      if(papData.length){
+        items.push({
+          key:'tyc_papelera', label:'Papelera',
+          count: papData.length,
+          detail: papData.length+' cotizaciones en papelera',
+          color:'#854F0B', icon:'🗑', data: papData
+        });
+      }
+    }catch(e){}
+  }
+
+  // Check tyc_drive_config
+  var rawConf = localStorage.getItem('tyc_drive_config');
+  if(rawConf){
+    try{
+      var conf = JSON.parse(rawConf);
+      if(conf.scriptUrl){
+        items.push({
+          key:'tyc_drive_config', label:'Configuración Drive Sync',
+          count:1,
+          detail:'URL: '+conf.scriptUrl.substring(0,40)+'...',
+          color:'#1F3864', icon:'△', data: conf
+        });
+      }
+    }catch(e){}
+  }
+
+  // Render results
+  if(!items.length){
+    resultado.innerHTML = '<div style="padding:12px;background:#F5E6E6;border-radius:7px;font-size:12px;color:#A32D2D;text-align:center">'
+      +'<div style="font-size:20px;margin-bottom:6px">⚠</div>'
+      +'<strong>No se encontraron datos guardados</strong><br>'
+      +'Los datos de este navegador no existen o fueron borrados.<br>'
+      +'<span style="font-size:11px">Intenta abrir el archivo en el navegador donde trabajaste originalmente.</span>'
+      +'</div>';
+    if(restBlock) restBlock.style.display='none';
+    return;
+  }
+
+  resultado.innerHTML = items.map(function(it){
+    return '<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;border-left:4px solid '+it.color+'">'
+      +'<span style="font-size:18px">'+it.icon+'</span>'
+      +'<div style="flex:1">'
+      +'<div style="font-size:12px;font-weight:600;color:var(--text)">'+it.label+'</div>'
+      +'<div style="font-size:11px;color:var(--text3);margin-top:2px">'+it.detail+'</div>'
+      +'</div>'
+      +'<span style="background:'+it.color+';color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600">'+it.count+'</span>'
+      +'</div>';
+  }).join('');
+
+  // Show restore buttons
+  if(restBlock) restBlock.style.display='block';
+  if(btnHist){
+    if(histData.length){
+      btnHist.style.display='flex';
+      btnHist.textContent = '↺ Restaurar '+histData.length+' cotizaciones del historial';
+    } else {
+      btnHist.style.display='none';
+    }
+  }
+  if(btnPap){
+    if(papData.length){
+      btnPap.style.display='flex';
+      btnPap.textContent = '↺ Restaurar '+papData.length+' cotizaciones de papelera';
+    } else {
+      btnPap.style.display='none';
+    }
+  }
+
+  showNotif('Escaneo completo: '+items.length+' fuentes encontradas');
+}
+
+function restaurarHistorico(){
+  var rawHist = localStorage.getItem('tyc_historico');
+  if(!rawHist){ showNotif('No hay historial guardado en este navegador','error'); return; }
+  try{
+    var data = JSON.parse(rawHist);
+    if(!data.length){ showNotif('El historial guardado está vacío','error'); return; }
+    if(!confirm('¿Restaurar '+data.length+' cotizaciones al historial actual?\n\nSe combinarán con las cotizaciones ya existentes (no se borrarán las actuales).')){return;}
+    var merged = 0;
+    data.forEach(function(c){
+      var exists = historicoCot.find(function(h){return h.id===c.id || h.num===c.num;});
+      if(!exists){ historicoCot.push(c); merged++; }
+    });
+    saveHistorico();
+    renderHistorico();
+    updateDashboard();
+    showNotif(merged+' cotizaciones restauradas al historial');
+    escanearLocalStorage();
+  }catch(e){ showNotif('Error al restaurar: '+e.message,'error'); }
+}
+
+function restaurarPapelera(){
+  var rawPap = localStorage.getItem('tyc_papelera');
+  if(!rawPap){ showNotif('No hay papelera guardada','error'); return; }
+  try{
+    var data = JSON.parse(rawPap);
+    if(!data.length){ showNotif('La papelera guardada está vacía','error'); return; }
+    if(!confirm('¿Restaurar '+data.length+' cotizaciones de la papelera?\n\nPasarán directo al Historial (estado Guardada).')){return;}
+    data.forEach(function(c){
+      var exists = historicoCot.find(function(h){return h.id===c.id;});
+      if(!exists){
+        c.estado = c.estado||'Guardada';
+        delete c._deletedAt;
+        historicoCot.push(c);
+      }
+    });
+    saveHistorico();
+    renderHistorico();
+    updateDashboard();
+    showNotif(data.length+' cotizaciones restauradas desde papelera al historial');
+  }catch(e){ showNotif('Error: '+e.message,'error'); }
+}
+
+function exportarBackupCompleto(){
+  var backup = {
+    version: '2.0',
+    fecha: new Date().toISOString(),
+    app: 'TYC Servicios y Mantenimiento Generales S.R.L.',
+    datos: {
+      historico: historicoCot,
+      papelera: (function(){ try{return JSON.parse(localStorage.getItem('tyc_papelera')||'[]');}catch(e){return[];} })(),
+      driveConfig: (function(){ try{return JSON.parse(localStorage.getItem('tyc_drive_config')||'null');}catch(e){return null;} })(),
+    },
+    resumen: {
+      totalCotizaciones: historicoCot.length,
+      totalFacturado: historicoCot.reduce(function(s,c){return s+(c.totalConIGV||0);},0).toFixed(2)
+    }
+  };
+  var json = JSON.stringify(backup, null, 2);
+  var blob = new Blob([json],{type:'application/json'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  var fecha = new Date().toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\//g,'-');
+  a.href=url; a.download='TYC_Backup_'+fecha+'.json';
+  a.click(); URL.revokeObjectURL(url);
+  showNotif('Backup completo descargado ('+historicoCot.length+' cotizaciones)');
+}
+
+function importarBackup(input){
+  var file = input.files[0]; if(!file) return;
+  document.getElementById('backup-file-name').textContent = file.name+' ('+Math.round(file.size/1024)+' KB)';
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var backup = JSON.parse(e.target.result);
+      // Validate structure
+      if(!backup.datos && !backup.historico && !Array.isArray(backup)){
+        showNotif('Archivo no reconocido. Debe ser un backup de TYC.','error'); return;
+      }
+      // Support both formats
+      var hist = backup.datos ? backup.datos.historico : (Array.isArray(backup) ? backup : null);
+      var pap  = backup.datos ? backup.datos.papelera : [];
+      var conf = backup.datos ? backup.datos.driveConfig : null;
+
+      var info = [];
+      if(hist && hist.length)  info.push(hist.length+' cotizaciones en historial');
+      if(pap  && pap.length)   info.push(pap.length+' en papelera');
+      if(conf) info.push('config Drive');
+      if(!info.length){ showNotif('El backup no contiene datos reconocibles','error'); return; }
+
+      if(!confirm('¿Importar backup?\n\nContenido: '+info.join(', ')+'\n\nLos datos existentes se combinarán con el backup (no se borran los actuales).')){
+        input.value=''; return;
+      }
+
+      var importados = 0;
+      if(hist){
+        hist.forEach(function(c){
+          var exists = historicoCot.find(function(h){return h.id===c.id||h.num===c.num;});
+          if(!exists){ historicoCot.push(c); importados++; }
+        });
+      }
+      if(pap && pap.length){
+        var papActual = [];
+        try{ papActual = JSON.parse(localStorage.getItem('tyc_papelera')||'[]'); }catch(ex){}
+        pap.forEach(function(c){
+          var exists = papActual.find(function(h){return h.id===c.id;});
+          if(!exists) papActual.push(c);
+        });
+        try{ localStorage.setItem('tyc_papelera', JSON.stringify(papActual)); }catch(ex){}
+      }
+      if(conf){
+        try{ localStorage.setItem('tyc_drive_config', JSON.stringify(conf)); }catch(ex){}
+      }
+      saveHistorico();
+      renderHistorico();
+      updateDashboard();
+      actualizarBadgeFinalizados();
+      input.value='';
+      showNotif('Backup importado: '+importados+' cotizaciones nuevas restauradas');
+      escanearLocalStorage();
+    }catch(err){
+      showNotif('Error al leer el archivo: '+err.message,'error');
+      input.value='';
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ─── Load config from localStorage on start
 function loadDriveConfig(){
   try {
     const saved = localStorage.getItem('tyc_drive_config');
