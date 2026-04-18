@@ -288,6 +288,9 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
       <button class="nav-tab" id="tab-proyecto" onclick="switchPage('proyecto')" data-page="proyecto" style="display:none;background:rgba(55,86,35,0.3);border-bottom:2px solid #4ADE80">
         <span class="tab-icon">⚙</span> En Proyecto
       </button>
+      <button class="nav-tab" onclick="switchPage('papelera')" data-page="papelera" style="color:rgba(255,255,255,0.5)">
+        <span class="tab-icon">🗑</span> Papelera
+      </button>
     </div>
   </div>
 </nav>
@@ -1090,66 +1093,129 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
 
   <!-- ── PANEL: TRABAJO FINALIZADO ── -->
   <div id="ppanel-finalizado" style="display:none">
+
+    <!-- KPIs row -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px">
+      <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border2)">
+        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Total cotizado</div>
+        <div id="fin-total-cot" style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;color:var(--accent)">S/ 0.00</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border2)">
+        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Total gastado</div>
+        <div id="fin-total-gasto" style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;color:var(--green)">S/ 0.00</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border2)">
+        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Margen real</div>
+        <div id="fin-margen" style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;color:var(--accent2)">S/ 0.00</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center;border:1px solid var(--border2)">
+        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Personal</div>
+        <div id="fin-personal" style="font-family:'IBM Plex Mono',monospace;font-size:17px;font-weight:600;color:#854F0B">0</div>
+      </div>
+    </div>
+
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
 
-      <!-- Resumen del proyecto -->
+      <!-- Acta de Conformidad -->
       <div class="card">
-        <div class="card-header" style="background:#375623;border-radius:10px 10px 0 0">
-          <span class="card-title" style="color:#fff">✅ Resumen Final</span>
+        <div class="card-header" style="background:#1F3864;border-radius:10px 10px 0 0">
+          <span class="card-title" style="color:#fff">📋 Acta de Conformidad</span>
+          <span style="font-size:10px;color:rgba(255,255,255,.6)">Modelo TYC</span>
         </div>
-        <div class="card-body" id="final-resumen">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-            <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center">
-              <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Total cotizado</div>
-              <div id="fin-total-cot" style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:var(--accent)">S/ 0.00</div>
+        <div class="card-body" style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="form-group">
+              <label class="form-label">Fecha de inicio del servicio</label>
+              <input type="date" class="form-control" id="acta-fecha-inicio" style="background:var(--yellow)">
             </div>
-            <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center">
-              <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Total gastado</div>
-              <div id="fin-total-gasto" style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:var(--green)">S/ 0.00</div>
-            </div>
-            <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center">
-              <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Margen real</div>
-              <div id="fin-margen" style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:var(--accent2)">S/ 0.00</div>
-            </div>
-            <div style="background:var(--surface2);border-radius:8px;padding:12px;text-align:center">
-              <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Personal</div>
-              <div id="fin-personal" style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:600;color:#854F0B">0</div>
+            <div class="form-group">
+              <label class="form-label">Fecha de término del servicio</label>
+              <input type="date" class="form-control" id="acta-fecha-fin" style="background:var(--yellow)" oninput="guardarActa()">
             </div>
           </div>
           <div class="form-group">
-            <label class="form-label">Observaciones finales</label>
-            <textarea class="form-control" id="proy-obs-final" rows="3" style="background:var(--yellow);resize:vertical;min-height:80px" placeholder="Lecciones aprendidas, incidentes, observaciones del cliente, calidad del trabajo..."></textarea>
+            <label class="form-label">Orden de compra del cliente</label>
+            <input type="text" class="form-control" id="acta-oc" placeholder="Ej: 005-2026-0028" style="background:var(--yellow)">
           </div>
-          <div class="form-group" style="margin-top:8px">
-            <label class="form-label">Fecha de cierre</label>
-            <input type="date" class="form-control" id="proy-fecha-cierre" style="background:var(--yellow)">
+          <div class="form-group">
+            <label class="form-label">Almacén / Dirección del cliente</label>
+            <input type="text" class="form-control" id="acta-almacen" placeholder="Ej: Av. Sánchez Cerro Nro. 2852, Zona Industrial, Piura" style="background:var(--yellow)">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Descripción del servicio ejecutado</label>
+            <textarea class="form-control" id="acta-servicio-desc" rows="3" style="background:var(--yellow);resize:vertical;min-height:80px" placeholder="Descripción general del servicio ejecutado en su totalidad..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Alcance del trabajo — actividades realizadas</label>
+            <div id="acta-actividades-lista" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
+            <button class="btn btn-outline btn-sm" onclick="addActaActividad()">+ Agregar actividad</button>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Observaciones durante la ejecución</label>
+            <textarea class="form-control" id="acta-obs" rows="2" style="background:var(--yellow);resize:vertical;min-height:60px" placeholder="Condiciones encontradas, eventos registrados, situaciones comunicadas al cliente..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nombre del representante del cliente</label>
+            <input type="text" class="form-control" id="acta-repr-cliente" placeholder="Nombre completo — Cargo" style="background:var(--yellow)">
+          </div>
+          <!-- Fotos de evidencia del acta -->
+          <div style="border:1px solid var(--border2);border-radius:8px;overflow:hidden">
+            <div style="background:var(--surface2);padding:8px 14px;display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px">📷 Fotos de evidencia</span>
+              <label class="btn btn-sm btn-primary" style="cursor:pointer;margin:0;font-size:11px">
+                + Fotos
+                <input type="file" accept="image/*" multiple style="display:none" onchange="subirFotosActa(this)">
+              </label>
+            </div>
+            <div id="acta-fotos-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;padding:10px">
+              <div style="grid-column:1/-1;text-align:center;color:var(--text3);font-size:12px;font-style:italic;padding:12px">Agrega fotos del trabajo finalizado</div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Documentos de cierre / entrega -->
-      <div class="card">
-        <div class="card-header" style="background:#375623;border-radius:10px 10px 0 0">
-          <span class="card-title" style="color:#fff">📄 Entregables al Cliente</span>
-          <label class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none;font-size:11px;cursor:pointer;margin:0">
-            + Subir
-            <input type="file" multiple style="display:none" onchange="subirDocFinal(this)">
-          </label>
-        </div>
-        <div class="card-body">
-          <div style="font-size:11px;color:var(--text3);margin-bottom:10px;padding:8px;background:var(--surface2);border-radius:6px">
-            Informe final, relatorios, actas de conformidad, fotos finales, certificados
+      <!-- Documentos + cierre -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="card">
+          <div class="card-header" style="background:#375623;border-radius:10px 10px 0 0">
+            <span class="card-title" style="color:#fff">📁 Entregables al Cliente</span>
+            <label class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:none;font-size:11px;cursor:pointer;margin:0">
+              + Subir
+              <input type="file" multiple style="display:none" onchange="subirDocFinal(this)">
+            </label>
           </div>
-          <div id="docs-final-lista" style="display:flex;flex-direction:column;gap:6px;max-height:250px;overflow-y:auto">
-            <div style="text-align:center;padding:16px;color:var(--text3);font-size:12px;font-style:italic">Sin documentos de cierre</div>
+          <div class="card-body">
+            <div style="font-size:11px;color:var(--text3);margin-bottom:8px;padding:6px 10px;background:var(--surface2);border-radius:6px">
+              Informe final, PETS, IPERC, fotos, actas, certificados
+            </div>
+            <div id="docs-final-lista" style="display:flex;flex-direction:column;gap:6px;max-height:180px;overflow-y:auto">
+              <div style="text-align:center;padding:12px;color:var(--text3);font-size:12px;font-style:italic">Sin documentos</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header" style="background:#555555;border-radius:10px 10px 0 0">
+            <span class="card-title" style="color:#fff">📝 Datos de cierre</span>
+          </div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:10px">
+            <div class="form-group">
+              <label class="form-label">Observaciones finales internas</label>
+              <textarea class="form-control" id="proy-obs-final" rows="3" style="background:var(--yellow);resize:vertical;min-height:70px" placeholder="Lecciones aprendidas, incidentes, evaluación del trabajo..."></textarea>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Fecha de cierre del proyecto</label>
+              <input type="date" class="form-control" id="proy-fecha-cierre" style="background:var(--yellow)">
+            </div>
           </div>
         </div>
       </div>
     </div>
 
     <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap">
-      <button class="btn btn-success" onclick="guardarProyecto()" style="font-weight:600">💾 Guardar cierre del proyecto</button>
-      <button class="btn btn-primary" onclick="generarInformeFinal()">📄 Generar informe final</button>
+      <button class="btn btn-success" onclick="guardarProyecto()" style="font-weight:600">💾 Guardar cierre</button>
+      <button class="btn btn-primary" onclick="generarActaConformidad()">📋 Generar Acta de Conformidad</button>
+      <button class="btn btn-outline" onclick="generarInformeFinal()">📄 Informe Final</button>
     </div>
   </div>
 
@@ -1264,6 +1330,29 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
     </div>
   </div>
 </div>
+<!-- ═══════════════ PAGE: PAPELERA ═══════════════ -->
+<div class="page" id="page-papelera">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h2 style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:var(--text2)">🗑 Papelera</h2>
+      <div style="font-size:12px;color:var(--text3);margin-top:2px"><span id="pap-count">0</span> cotizaciones eliminadas</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline btn-sm" onclick="restaurarTodoPapelera()">↺ Restaurar todo</button>
+      <button class="btn btn-danger btn-sm" onclick="vaciarPapelera()">🗑 Vaciar papelera</button>
+    </div>
+  </div>
+  <div style="background:#FEF9EE;border:1px solid #F0D080;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#5A3E00">
+    ⚠ Las cotizaciones en papelera se conservan aquí antes de ser eliminadas definitivamente. Puedes restaurarlas al historial en cualquier momento.
+  </div>
+  <div id="pap-lista" style="display:flex;flex-direction:column;gap:10px">
+    <div style="text-align:center;padding:32px;color:var(--text3)">
+      <div style="font-size:32px;margin-bottom:8px">🗑</div>
+      <div>La papelera está vacía</div>
+    </div>
+  </div>
+</div>
+
 <div class="page" id="page-drive">
   <div style="display:grid;grid-template-columns:1fr 380px;gap:20px;align-items:start">
     <!-- LEFT: Setup & Status -->
@@ -1877,6 +1966,7 @@ function switchPage(id){
   if(id==='cotizacion'){ renderCotizacion(); setTimeout(()=>{ document.querySelectorAll('textarea.form-control').forEach(el=>autoHeight(el)); initFirmaCanvas(); },80); }
   if(id==='preview') renderPreview();
   if(id==='historico') renderHistorico();
+  if(id==='papelera')  renderPapelera();
 }
 
 function updateDashboard(){
@@ -4404,10 +4494,16 @@ function renderHistorico(){
 function eliminarHistorico(id){
   const c = historicoCot.find(h=>h.id===id);
   if(!c) return;
-  if(!confirm(`¿Eliminar la cotización ${c.num} — ${c.cliente}?\n\nEsta acción no se puede deshacer.`)) return;
+  if(!confirm(`¿Mover la cotización ${c.num} — ${c.cliente} a la papelera?\n\nPodrás restaurarla desde la sección 🗑 Papelera.`)) return;
+  // Move to papelera
+  loadPapelera();
+  c._deletedAt = new Date().toISOString();
+  papelera.unshift(c);
+  savePapelera();
+  // Remove from historico
   historicoCot = historicoCot.filter(h=>h.id!==id);
   saveHistorico();
-  showNotif(`Cotización ${c.num} eliminada`);
+  showNotif(`${c.num} movida a la papelera`);
   renderHistorico();
   updateDashboard();
 }
@@ -4537,7 +4633,7 @@ function switchProyTab(tab){
   if(proy) proy.fase = tab;
   if(tab==='inicio') renderRequisitos();
   if(tab==='proceso'){ renderMatControl(); renderPersonal(); renderGastos(); }
-  if(tab==='finalizado') renderResumenFinal();
+  if(tab==='finalizado'){ renderResumenFinal(); renderActa(); }
 }
 
 // ── REQUISITOS SIG ──────────────────────────────────────────────────────────
@@ -4923,6 +5019,319 @@ function guardarProyecto(silent=false){
   if(!silent) showNotif('Proyecto guardado correctamente');
 }
 
+// ─── PAPELERA ──────────────────────────────────────────────────────────────
+let papelera = [];
+
+function loadPapelera(){
+  try { papelera = JSON.parse(localStorage.getItem('tyc_papelera')||'[]'); } catch(e){ papelera=[]; }
+}
+function savePapelera(){
+  try { localStorage.setItem('tyc_papelera', JSON.stringify(papelera)); } catch(e){}
+}
+
+function renderPapelera(){
+  loadPapelera();
+  const lista  = document.getElementById('pap-lista');
+  const countEl= document.getElementById('pap-count');
+  if(countEl) countEl.textContent = papelera.length;
+  if(!lista) return;
+  if(!papelera.length){
+    lista.innerHTML='<div style="text-align:center;padding:32px;color:var(--text3)"><div style="font-size:32px;margin-bottom:8px">🗑</div><div>La papelera está vacía</div></div>';
+    return;
+  }
+  lista.innerHTML = papelera.map((c,i)=>{
+    const fechaDel = c._deletedAt ? new Date(c._deletedAt).toLocaleString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—';
+    return `<div style="background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:14px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;opacity:.85">
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:4px">
+          <span style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:600;color:var(--text)">${c.num||'—'}</span>
+          <span style="font-size:10px;background:#F5E6E6;color:#A32D2D;padding:2px 6px;border-radius:4px;font-weight:500">Eliminada</span>
+        </div>
+        <div style="font-size:13px;font-weight:500;color:var(--text)">${c.cliente||'—'}${c.ruc?' — RUC: '+c.ruc:''}</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">${c.desc||'—'} · ${c.lugar||'—'}</div>
+        <div style="font-size:10px;color:var(--text3);margin-top:2px">Eliminada el: ${fechaDel} · Total: ${fmt(c.totalConIGV||0)}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="btn btn-success btn-sm" onclick="restaurarDePapelera(${i})">↺ Restaurar</button>
+        <button class="btn btn-danger btn-sm" onclick="eliminarDefinitivo(${i})" title="Eliminar permanentemente">✕ Borrar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function restaurarDePapelera(i){
+  loadPapelera();
+  const c = papelera[i];
+  if(!c) return;
+  delete c._deletedAt;
+  historicoCot.unshift(c);
+  papelera.splice(i,1);
+  saveHistorico(); savePapelera();
+  renderPapelera(); renderHistorico();
+  showNotif(`Cotización ${c.num} restaurada al historial`);
+}
+
+function restaurarTodoPapelera(){
+  loadPapelera();
+  if(!papelera.length){ showNotif('La papelera ya está vacía'); return; }
+  if(!confirm(`¿Restaurar todas las ${papelera.length} cotizaciones al historial?`)) return;
+  papelera.forEach(c=>{ delete c._deletedAt; historicoCot.unshift(c); });
+  papelera=[];
+  saveHistorico(); savePapelera();
+  renderPapelera(); renderHistorico();
+  showNotif(`${historicoCot.length} cotizaciones restauradas`);
+}
+
+function eliminarDefinitivo(i){
+  loadPapelera();
+  const c = papelera[i];
+  if(!confirm(`¿Eliminar DEFINITIVAMENTE ${c.num}?\nEsta acción no se puede deshacer.`)) return;
+  papelera.splice(i,1); savePapelera(); renderPapelera();
+  showNotif('Eliminado permanentemente');
+}
+
+function vaciarPapelera(){
+  loadPapelera();
+  if(!papelera.length){ showNotif('La papelera ya está vacía'); return; }
+  if(!confirm(`¿Vaciar la papelera? Se eliminarán ${papelera.length} cotizaciones de forma permanente.`)) return;
+  papelera=[]; savePapelera(); renderPapelera();
+  showNotif('Papelera vaciada');
+}
+
+// ─── ACTA DE CONFORMIDAD ────────────────────────────────────────────────────
+function guardarActa(){
+  if(!proyectoActualId) return;
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  const gv = id => document.getElementById(id)?.value||'';
+  proy.acta = proy.acta || {};
+  Object.assign(proy.acta,{
+    fechaInicio: gv('acta-fecha-inicio'),
+    fechaFin:    gv('acta-fecha-fin'),
+    oc:          gv('acta-oc'),
+    almacen:     gv('acta-almacen'),
+    servicioDesc:gv('acta-servicio-desc'),
+    obs:         gv('acta-obs'),
+    reprCliente: gv('acta-repr-cliente'),
+  });
+  saveHistorico();
+}
+
+function renderActa(){
+  if(!proyectoActualId) return;
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  const acta = proy.acta||{};
+  const setV = (id,v)=>{ const el=document.getElementById(id); if(el&&v) el.value=v; };
+  setV('acta-fecha-inicio', acta.fechaInicio || proy.fechaInicio);
+  setV('acta-fecha-fin',    acta.fechaFin    || proy.fechaFin);
+  setV('acta-oc',           acta.oc);
+  setV('acta-almacen',      acta.almacen);
+  setV('acta-servicio-desc',acta.servicioDesc);
+  setV('acta-obs',          acta.obs);
+  setV('acta-repr-cliente', acta.reprCliente);
+  renderActaActividades();
+  renderActaFotos();
+}
+
+function renderActaActividades(){
+  if(!proyectoActualId) return;
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  const lista = document.getElementById('acta-actividades-lista'); if(!lista) return;
+  const acts = proy.acta?.actividades||[];
+  if(!acts.length){
+    lista.innerHTML='<div style="font-size:12px;color:var(--text3);font-style:italic;padding:4px">Sin actividades registradas</div>';
+    return;
+  }
+  lista.innerHTML = acts.map((a,i)=>`
+    <div style="display:flex;gap:6px;align-items:flex-start">
+      <input type="text" value="${a.titulo||''}" placeholder="Título de actividad"
+        style="flex:0 0 160px;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:11px;font-weight:600;background:var(--yellow)"
+        oninput="editActaActividad(${i},'titulo',this.value)">
+      <textarea rows="2" placeholder="Descripción de lo realizado..."
+        style="flex:1;padding:5px 8px;border:1px solid var(--border);border-radius:5px;font-size:11px;background:var(--yellow);resize:vertical;min-height:50px"
+        oninput="editActaActividad(${i},'desc',this.value)">${a.desc||''}</textarea>
+      <button onclick="removeActaActividad(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:14px;padding:4px;flex-shrink:0">✕</button>
+    </div>`).join('');
+}
+
+function addActaActividad(){
+  if(!proyectoActualId) return;
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  if(!proy.acta) proy.acta={};
+  if(!proy.acta.actividades) proy.acta.actividades=[];
+  proy.acta.actividades.push({titulo:'', desc:''});
+  saveHistorico(); renderActaActividades();
+}
+function editActaActividad(i,field,val){
+  if(!proyectoActualId) return;
+  const proy = getProyecto(proyectoActualId); if(!proy||!proy.acta?.actividades) return;
+  proy.acta.actividades[i][field]=val; saveHistorico();
+}
+function removeActaActividad(i){
+  if(!proyectoActualId) return;
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  proy.acta.actividades.splice(i,1); saveHistorico(); renderActaActividades();
+}
+
+// Fotos del acta
+function subirFotosActa(input){
+  if(!proyectoActualId) return;
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  if(!proy.acta) proy.acta={};
+  if(!proy.acta.fotos) proy.acta.fotos=[];
+  Array.from(input.files).forEach(file=>{
+    if(proy.acta.fotos.length>=12){showNotif('Máximo 12 fotos de evidencia','error');return;}
+    const fileMB = file.size/(1024*1024);
+    const reader = new FileReader();
+    reader.onload=e=>{
+      proy.acta.fotos.push({name:file.name, caption:'', dataUrl:e.target.result, mb:fileMB.toFixed(1)});
+      saveHistorico(); renderActaFotos();
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value='';
+}
+
+function renderActaFotos(){
+  if(!proyectoActualId) return;
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  const grid = document.getElementById('acta-fotos-grid'); if(!grid) return;
+  const fotos = proy.acta?.fotos||[];
+  if(!fotos.length){
+    grid.innerHTML='<div style="grid-column:1/-1;text-align:center;color:var(--text3);font-size:12px;font-style:italic;padding:12px">Agrega fotos del trabajo finalizado</div>';
+    return;
+  }
+  grid.innerHTML = fotos.map((f,i)=>`
+    <div style="position:relative;border:1px solid var(--border2);border-radius:7px;overflow:hidden;background:var(--surface2)">
+      <img src="${f.dataUrl}" style="width:100%;height:90px;object-fit:cover;display:block">
+      <div style="padding:4px 6px">
+        <input type="text" value="${f.caption||''}" placeholder="Descripción..."
+          style="width:100%;border:none;background:transparent;font-size:10px;outline:none"
+          oninput="editActaFotoCaption(${i},this.value)">
+        <div style="font-size:9px;color:var(--text3)">${f.mb||'?'} MB</div>
+      </div>
+      <button onclick="removeActaFoto(${i})" style="position:absolute;top:3px;right:3px;background:rgba(192,0,0,.8);color:#fff;border:none;border-radius:50%;width:18px;height:18px;cursor:pointer;font-size:9px;display:flex;align-items:center;justify-content:center;padding:0">✕</button>
+    </div>`).join('');
+}
+function editActaFotoCaption(i,val){
+  if(!proyectoActualId) return;
+  const proy=getProyecto(proyectoActualId); if(!proy?.acta?.fotos) return;
+  proy.acta.fotos[i].caption=val; saveHistorico();
+}
+function removeActaFoto(i){
+  if(!proyectoActualId) return;
+  const proy=getProyecto(proyectoActualId); if(!proy) return;
+  proy.acta.fotos.splice(i,1); saveHistorico(); renderActaFotos();
+}
+
+function generarActaConformidad(){
+  guardarActa(); guardarProyecto(true);
+  const proy = getProyecto(proyectoActualId); if(!proy) return;
+  const c = historicoCot.find(h=>h.id===proyectoActualId); if(!c) return;
+  const acta = proy.acta||{};
+  const ciudad = 'Paita';
+  const fechaCierre = acta.fechaFin
+    ? new Date(acta.fechaFin+'T12:00').toLocaleDateString('es-PE',{day:'numeric',month:'long',year:'numeric'})
+    : new Date().toLocaleDateString('es-PE',{day:'numeric',month:'long',year:'numeric'});
+  const actividades = (acta.actividades||[]).filter(a=>a.titulo||a.desc);
+
+  const fotosHtml = (acta.fotos||[]).length
+    ? `<div style="margin-top:20px"><div style="font-weight:700;font-size:13px;margin-bottom:10px;border-bottom:1px solid #ddd;padding-bottom:6px">REGISTRO FOTOGRÁFICO DE EVIDENCIA</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+        ${(acta.fotos||[]).map(function(f,i){ return '<div style="border:1px solid #ddd;border-radius:6px;overflow:hidden"><img src="'+f.dataUrl+'" style="width:100%;height:120px;object-fit:cover;display:block"><div style="padding:4px 6px;font-size:10px;color:#555;text-align:center">'+(f.caption||('Foto '+(i+1)))+'</div></div>'; }).join('')}
+      </div></div>` : '';
+
+  const win = window.open('','_blank','width=870,height=700');
+  win.document.write(`<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><title>Acta de Conformidad — ${c.num}</title>
+<style>
+  body{font-family:Arial,sans-serif;margin:0;padding:0;color:#222;font-size:13px;line-height:1.65}
+  .hdr{background:#1F3864;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center}
+  .hdr-right{text-align:right;font-size:11px;line-height:1.8}
+  .content{padding:28px 36px}
+  h1{text-align:center;font-size:15px;text-transform:uppercase;letter-spacing:1px;margin:16px 0 20px;text-decoration:underline}
+  .field{margin-bottom:6px}
+  .label{font-weight:700}
+  .section-title{font-weight:700;font-size:13px;text-transform:uppercase;margin:18px 0 8px;border-bottom:1px solid #ccc;padding-bottom:4px}
+  ul{margin:6px 0;padding-left:20px}
+  li{margin-bottom:6px}
+  li b{display:block}
+  .firma-grid{display:grid;grid-template-columns:1fr 1fr;gap:50px;margin-top:40px}
+  .firma-box{text-align:center}
+  .firma-img{height:70px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:0}
+  .firma-line{border-top:1px solid #333;margin:0 10px 6px}
+  .no-print{padding:10px 14px;background:#f0f0f0;display:flex;gap:8px;align-items:center}
+  @media print{.no-print{display:none};body{padding:0};.content{padding:18px 26px}}
+</style></head>
+<body>
+<div class="no-print">
+  <button onclick="window.print()" style="background:#1F3864;color:#fff;border:none;padding:7px 16px;border-radius:5px;cursor:pointer;font-weight:500">⎙ Imprimir / Guardar PDF</button>
+  <button onclick="window.close()" style="background:#eee;border:1px solid #ccc;padding:7px 12px;border-radius:5px;cursor:pointer">✕ Cerrar</button>
+  <span style="font-size:11px;color:#777">Desactiva "Encabezados y pies de página" al guardar como PDF</span>
+</div>
+
+<div class="hdr">
+  <div style="display:flex;align-items:center;gap:12px">
+    <img src="${typeof TYC_LOGO!=='undefined'?TYC_LOGO:''}" style="height:52px;object-fit:contain;filter:brightness(0) invert(1)">
+    <div>
+      <div style="font-size:13px;font-weight:700">TYC SERVICIOS Y MANTENIMIENTO GENERALES S.R.L.</div>
+      <div style="font-size:11px;opacity:.8">RUC: 20614003546</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <div>Calle Javier Pérez de Cuellar Nro. 08 A.H. San Francisco, Paita</div>
+    <div>Tel: +51 943 435 224 · adm@tycsmg.com</div>
+    <div>${ciudad}, ${fechaCierre}</div>
+  </div>
+</div>
+
+<div class="content">
+<h1>ACTA DE CONFORMIDAD</h1>
+
+<div class="field"><span class="label">EMPRESA:</span> ${c.cliente||'—'}</div>
+<div class="field"><span class="label">RUC:</span> ${c.ruc||'—'}</div>
+${acta.almacen?'<div class="field"><span class="label">ALMACÉN:</span> '+acta.almacen+'</div>':''}
+<div class="field"><span class="label">SERVICIO:</span> ${c.desc||'—'}</div>
+<div class="field"><span class="label">COTIZACIÓN N°</span> ${c.num||'—'}</div>
+${acta.oc?'<div class="field"><span class="label">ORDEN DE COMPRA N°</span> '+acta.oc+'</div>':''}
+
+<p style="margin-top:14px">Por la presente, se certifica que el servicio de <strong>${c.desc||'mantenimiento'}</strong> ha sido ejecutado en su totalidad, cumpliendo con los requerimientos técnicos y especificaciones previamente coordinadas con la empresa <strong>${c.cliente||'el cliente'}</strong>.</p>
+
+<p>El trabajo se desarrolló conforme a los estándares de calidad y seguridad establecidos, garantizando la correcta operatividad de los servicios realizados y la protección de las estructuras intervenidas.</p>
+
+<div class="section-title">EJECUCIÓN DEL SERVICIO</div>
+<p>Las actividades se realizaron en las instalaciones de <strong>${c.cliente||'—'}</strong>${c.lugar?' — '+c.lugar:''}, iniciándose el día <strong>${acta.fechaInicio?new Date(acta.fechaInicio+'T12:00').toLocaleDateString('es-PE',{day:'numeric',month:'long',year:'numeric'}):proy.fechaInicio||'—'}</strong> y culminando satisfactoriamente el <strong>${acta.fechaFin?new Date(acta.fechaFin+'T12:00').toLocaleDateString('es-PE',{day:'numeric',month:'long',year:'numeric'}):proy.fechaFin||'—'}</strong>.</p>
+
+${acta.servicioDesc?'<p>'+acta.servicioDesc+'</p>':''}
+
+${actividades.length?'<div class="section-title">ALCANCE DEL SERVICIO</div><ul>'+actividades.map(function(a){return '<li><b>'+(a.titulo||'')+'</b>'+(a.desc||'')+'</li>';}).join('')+'</ul>':''}
+
+${acta.obs?'<div class="section-title">OBSERVACIONES DURANTE LA EJECUCIÓN</div><p>'+acta.obs+'</p>':''}
+
+${fotosHtml}
+
+<div class="firma-grid">
+  <div class="firma-box">
+    <div class="firma-img">
+      ${getFirmaDataUrl()?'<img src="'+getFirmaDataUrl()+'" style="max-height:70px;max-width:200px;object-fit:contain">':''}
+    </div>
+    <div class="firma-line"></div>
+    <div style="font-weight:700;font-size:12px">TYC SERVICIOS Y MANTENIMIENTO GENERALES S.RL</div>
+    <div style="font-size:12px">JOSÉ MONCADA LLUEN - GERENTE GENERAL</div>
+    <div style="font-size:11px;color:#555">DNI 03463888</div>
+  </div>
+  <div class="firma-box">
+    <div style="height:70px"></div>
+    <div class="firma-line"></div>
+    <div style="font-weight:700;font-size:12px">${acta.reprCliente||'ADMINISTRADOR / RESPONSABLE DE SEDE'}</div>
+    <div style="font-size:12px">${c.cliente||'CLIENTE'}</div>
+    ${c.ruc?'<div style="font-size:11px;color:#555">RUC N° '+c.ruc+'</div>':''}
+  </div>
+</div>
+</div>
+</body></html>`);
+  win.document.close();
+}
+
 function generarCartaPresentacion(){
   guardarProyecto(true);
   const proy = getProyecto(proyectoActualId); if(!proy) return;
@@ -4983,7 +5392,7 @@ function generarCartaPresentacion(){
 
 <div class="dest">
   <strong>Señores:</strong><br>
-  <strong>${c.cliente||'Cliente'}</strong>${c.ruc?` — RUC: ${c.ruc}`:''}<br>
+  <strong>${c.cliente||'Cliente'}</strong>${c.ruc?' — RUC: '+c.ruc:''}<br>
   ${c.lugar||'—'}<br>
   <strong>Administrador / Responsable de Sede</strong>
 </div>
@@ -5005,14 +5414,11 @@ function generarCartaPresentacion(){
 </table>
 
 <p style="margin-top:16px"><strong>PERSONAL ASIGNADO AL SERVICIO:</strong></p>
-${personalList ? `<table>
-  <tr><th>Nombre completo</th><th>Cargo</th><th>DNI</th><th>Certificaciones</th></tr>
-  ${personalList}
-</table>` : '<p style="color:#888;font-style:italic">Personal por asignar. Se adjuntará antes del inicio.</p>'}
+${personalList ? '<table><tr><th>Nombre completo</th><th>Cargo</th><th>DNI</th><th>Certificaciones</th></tr>'+personalList+'</table>' : '<p style="color:#888;font-style:italic">Personal por asignar. Se adjuntará antes del inicio.</p>'}
 
 <p style="margin-top:16px">Adjunto a la presente carta, remitimos la siguiente documentación requerida:</p>
 <ul style="margin:8px 0;padding-left:22px;line-height:2">
-${proy.requisitos.filter(r=>r.ok&&r.archivo).map(r=>`<li><strong>${r.req}</strong> — ${r.archivo}</li>`).join('')||'<li style="color:#888">Documentación en proceso de preparación</li>'}
+${proy.requisitos.filter(function(r){return r.ok&&r.archivo;}).map(function(r){return '<li><strong>'+r.req+'</strong> — '+r.archivo+'</li>';}).join('')||'<li style="color:#888">Documentación en proceso de preparación</li>'}
 </ul>
 
 <p style="margin-top:10px">Nos comprometemos a cumplir con todos los estándares de seguridad, medio ambiente y calidad requeridos por su organización, incluyendo los lineamientos del Sistema Integrado de Gestión y el cumplimiento de la normativa vigente en materia de Seguridad y Salud en el Trabajo (Ley N° 29783 y su Reglamento D.S. 005-2012-TR).</p>
@@ -5023,9 +5429,7 @@ ${proy.requisitos.filter(r=>r.ok&&r.archivo).map(r=>`<li><strong>${r.req}</stron
 
 <div class="firma-block">
   <div class="firma-box">
-    ${getFirmaDataUrl() ? `<div style="height:70px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:0">
-      <img src="${getFirmaDataUrl()}" style="max-height:68px;max-width:220px;object-fit:contain;display:block">
-    </div>` : `<div style="height:70px"></div>`}
+    ${getFirmaDataUrl() ? '<div style="height:70px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:0"><img src="'+getFirmaDataUrl()+'" style="max-height:68px;max-width:220px;object-fit:contain;display:block"></div>' : '<div style="height:70px"></div>'}
     <div class="firma-line"></div>
     <div style="font-weight:700;font-size:13px">TYC SERVICIOS Y MANTENIMIENTO GENERALES S.R.L.</div>
     <div style="font-size:12px;color:#555">José Moncada Lluen — Gerente General</div>
@@ -5145,19 +5549,16 @@ function generarInformeFinal(){
   <div class="kpi-box"><div class="kpi-label">Personal</div><div class="kpi-val" style="color:#555">${proy.personal.length}</div></div>
 </div>
 
-${matRows?`<h2>3. Control de Materiales</h2>
-<table><tr><th>Descripción</th><th>Cantidad</th><th>Estado</th><th style="text-align:right">Costo real</th></tr>${matRows}</table>`:''}
+${matRows?'<h2>3. Control de Materiales</h2><table><tr><th>Descripción</th><th>Cantidad</th><th>Estado</th><th style="text-align:right">Costo real</th></tr>'+matRows+'</table>':''}
 
-${gastoRows?`<h2>4. Gastos Adicionales</h2>
-<table><tr><th>Descripción</th><th>Fecha</th><th style="text-align:right">Monto</th></tr>${gastoRows}<tr><th colspan="2" style="text-align:right;padding:5px 8px;background:#f5f5f5">Total gastos extra:</th><td style="padding:5px 8px;border:1px solid #ddd;font-weight:700;text-align:right">S/ ${fmtN(gastoExtra)}</td></tr></table>`:''}
+${gastoRows?'<h2>4. Gastos Adicionales</h2><table><tr><th>Descripción</th><th>Fecha</th><th style="text-align:right">Monto</th></tr>'+gastoRows+'<tr><th colspan="2" style="text-align:right;padding:5px 8px;background:#f5f5f5">Total gastos extra:</th><td style="padding:5px 8px;border:1px solid #ddd;font-weight:700;text-align:right">S/ '+fmtN(gastoExtra)+'</td></tr></table>':''}
 
-${persRows?`<h2>5. Personal del Proyecto</h2>
-<table><tr><th>Nombre</th><th>Cargo</th><th>DNI</th><th>Certificaciones</th></tr>${persRows}</table>`:''}
+${persRows?'<h2>5. Personal del Proyecto</h2><table><tr><th>Nombre</th><th>Cargo</th><th>DNI</th><th>Certificaciones</th></tr>'+persRows+'</table>':''}
 
 <h2>${matRows||gastoRows||persRows?'6':'3'}. Cumplimiento de Requisitos SIG</h2>
 <table><tr><th>Requisito</th><th style="text-align:center;width:120px">Estado</th><th>Documento adjunto</th></tr>${reqRows}</table>
 
-${proy.obsFinal?`<h2>Observaciones Finales</h2><p style="background:#F9FBE7;border-left:4px solid #375623;padding:10px 14px;border-radius:4px">${proy.obsFinal}</p>`:''}
+${proy.obsFinal?'<h2>Observaciones Finales</h2><p style="background:#F9FBE7;border-left:4px solid #375623;padding:10px 14px;border-radius:4px">'+proy.obsFinal+'</p>':''}
 
 <div style="margin-top:36px;display:grid;grid-template-columns:1fr 1fr;gap:40px">
   <div style="text-align:center">
@@ -5342,6 +5743,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   if(navLogo && typeof TYC_LOGO !== 'undefined') navLogo.src = TYC_LOGO;
   // Init firma canvas
   setTimeout(initFirmaCanvas, 300);
+  // Init papelera
+  loadPapelera();
   // Init auto-height textareas
   document.querySelectorAll('.auto-height').forEach(el=>autoHeight(el));
 });
