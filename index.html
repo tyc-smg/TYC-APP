@@ -209,6 +209,8 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
 .estado-enviada{background:var(--blue-light);color:var(--accent)}
 .estado-aprobada{background:#E2EFDA;color:#375623}
 .estado-rechazada{background:var(--red-light);color:var(--red)}
+.estado-finalizado{background:#E8EAF6;color:#283593}
+.estado-archivado{background:#F3E5F5;color:#6A1B9A}
 /* Auto-sync banner */
 .sync-banner{display:none;background:var(--accent2);color:#fff;padding:8px 20px;font-size:12px;text-align:center;position:sticky;top:58px;z-index:90}
 .sync-banner.show{display:block}
@@ -287,6 +289,10 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
       </button>
       <button class="nav-tab" id="tab-proyecto" onclick="switchPage('proyecto')" data-page="proyecto" style="display:none;background:rgba(55,86,35,0.3);border-bottom:2px solid #4ADE80">
         <span class="tab-icon">⚙</span> En Proyecto
+      </button>
+      <button class="nav-tab" onclick="switchPage('finalizados')" data-page="finalizados" style="position:relative">
+        <span class="tab-icon">✅</span> Finalizados
+        <span id="badge-finalizados" style="display:none;position:absolute;top:6px;right:6px;background:#A32D2D;color:#fff;border-radius:50%;width:16px;height:16px;font-size:9px;font-weight:700;align-items:center;justify-content:center"></span>
       </button>
       <button class="nav-tab" onclick="switchPage('papelera')" data-page="papelera" style="color:rgba(255,255,255,0.5)">
         <span class="tab-icon">🗑</span> Papelera
@@ -1305,7 +1311,7 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
     </div>
     <select id="hist-filter-estado" class="filter-select" onchange="renderHistorico()">
       <option value="">Todos los estados</option>
-      <option>Guardada</option><option>Enviada</option><option>Aprobada</option><option>Rechazada</option>
+      <option>Guardada</option><option>Enviada</option><option>Aprobada</option><option>Rechazada</option><option>Finalizado</option><option>Archivado</option>
     </select>
     <select id="hist-filter-año" class="filter-select" onchange="renderHistorico()">
       <option value="">Todos los años</option>
@@ -1330,6 +1336,75 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
     </div>
   </div>
 </div>
+<!-- ═══════════════ PAGE: FINALIZADOS ═══════════════ -->
+<div class="page" id="page-finalizados">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:12px">
+    <div>
+      <h2 style="font-family:'IBM Plex Mono',monospace;font-size:16px;font-weight:600;color:var(--accent)">✅ Cotizaciones Finalizadas y Archivadas</h2>
+      <div style="font-size:12px;color:var(--text2);margin-top:2px">
+        <span id="fin-count-finalizado" style="font-weight:600;color:#283593">0</span> finalizadas ·
+        <span id="fin-count-archivado"  style="font-weight:600;color:#6A1B9A">0</span> archivadas ·
+        Total: <span id="fin-total-sum" style="font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--green)">S/ 0.00</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-outline btn-sm" onclick="exportarFinalizadosCSV()">↓ Exportar CSV</button>
+      <button class="btn btn-primary btn-sm" onclick="switchPage('historico')">← Historial</button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <div class="search-box" style="flex:1;min-width:180px">
+      <input type="text" id="fin-search" placeholder="Buscar por N°, cliente, descripción..." oninput="renderFinalizados()" style="width:100%">
+    </div>
+    <select id="fin-filter-tipo" class="filter-select" onchange="renderFinalizados()">
+      <option value="">Finalizados y Archivados</option>
+      <option value="Finalizado">✅ Solo Finalizados</option>
+      <option value="Archivado">📦 Solo Archivados</option>
+    </select>
+    <select id="fin-filter-año" class="filter-select" onchange="renderFinalizados()">
+      <option value="">Todos los años</option>
+      <option>2026</option><option>2025</option><option>2024</option>
+    </select>
+    <select id="fin-sort" class="filter-select" onchange="renderFinalizados()">
+      <option value="fecha_desc">Más reciente primero</option>
+      <option value="fecha_asc">Más antiguo primero</option>
+      <option value="total_desc">Mayor valor</option>
+      <option value="total_asc">Menor valor</option>
+      <option value="cliente_asc">Cliente A→Z</option>
+    </select>
+    <button class="btn btn-outline btn-sm" onclick="limpiarFiltrosFinalizados()">✕ Limpiar</button>
+  </div>
+
+  <!-- Stats cards -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px" id="fin-stats-row">
+    <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:12px;text-align:center">
+      <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Total servicios</div>
+      <div id="fin-stat-count" style="font-size:20px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--accent)">0</div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:12px;text-align:center">
+      <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Facturado total</div>
+      <div id="fin-stat-total" style="font-size:20px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--green)">S/ 0</div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:12px;text-align:center">
+      <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Ticket promedio</div>
+      <div id="fin-stat-avg" style="font-size:20px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#854F0B">S/ 0</div>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:12px;text-align:center">
+      <div style="font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Clientes únicos</div>
+      <div id="fin-stat-clientes" style="font-size:20px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#1F3864">0</div>
+    </div>
+  </div>
+
+  <div id="fin-lista" style="display:flex;flex-direction:column;gap:10px">
+    <div class="empty-state">
+      <div class="empty-icon">✅</div>
+      <div class="empty-text">No hay cotizaciones finalizadas aún.<br>Cambia el estado de una cotización a "Finalizado" o "Archivado" desde el Historial.</div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════ PAGE: PAPELERA ═══════════════ -->
 <div class="page" id="page-papelera">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px">
@@ -1965,8 +2040,9 @@ function switchPage(id){
   if(id==='materiales') renderMateriales();
   if(id==='cotizacion'){ renderCotizacion(); setTimeout(()=>{ document.querySelectorAll('textarea.form-control').forEach(el=>autoHeight(el)); initFirmaCanvas(); },80); }
   if(id==='preview') renderPreview();
-  if(id==='historico') renderHistorico();
-  if(id==='papelera')  renderPapelera();
+  if(id==='historico')    renderHistorico();
+  if(id==='papelera')     renderPapelera();
+  if(id==='finalizados')  renderFinalizados();
 }
 
 function updateDashboard(){
@@ -4444,7 +4520,8 @@ function renderHistorico(){
   lista.innerHTML = filtered.map(c=>{
     const estadoClass = {
       'Guardada':'estado-guardada','Enviada':'estado-enviada',
-      'Aprobada':'estado-aprobada','Rechazada':'estado-rechazada'
+      'Aprobada':'estado-aprobada','Rechazada':'estado-rechazada',
+      'Finalizado':'estado-finalizado','Archivado':'estado-archivado'
     }[c.estado]||'estado-guardada';
 
     const fechaFmt = c.fecha ? new Date(c.fecha+'T12:00').toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
@@ -4477,6 +4554,8 @@ function renderHistorico(){
           <option value="Enviada"${c.estado==='Enviada'?' selected':''}>Enviada</option>
           <option value="Aprobada"${c.estado==='Aprobada'?' selected':''}>Aprobada</option>
           <option value="Rechazada"${c.estado==='Rechazada'?' selected':''}>Rechazada</option>
+          <option value="Finalizado"${c.estado==='Finalizado'?' selected':''}>✅ Finalizado</option>
+          <option value="Archivado"${c.estado==='Archivado'?' selected':''}>📦 Archivado</option>
         </select>
         <button class="btn btn-danger btn-sm" onclick="eliminarHistorico(${c.id})" title="Eliminar cotización">🗑</button>
       </div>
@@ -4522,14 +4601,30 @@ function cambiarEstado(id, estado){
   const idx = historicoCot.findIndex(c=>c.id===id);
   if(idx>=0){
     historicoCot[idx].estado = estado;
+    if(!historicoCot[idx]._histEstados) historicoCot[idx]._histEstados=[];
+    historicoCot[idx]._histEstados.push({estado, fecha: new Date().toISOString()});
+    if(estado==='Finalizado'||estado==='Archivado'){
+      historicoCot[idx]._fechaFin = new Date().toISOString();
+    }
     saveHistorico();
     if(estado==='Aprobada'){
       const tab = document.getElementById('tab-proyecto');
       if(tab) tab.style.display='flex';
     }
+    // Update finalizados badge count
+    actualizarBadgeFinalizados();
   }
-  showNotif('Estado: '+estado);
+  showNotif('Estado actualizado: '+estado);
   renderHistorico();
+}
+
+function actualizarBadgeFinalizados(){
+  const count = historicoCot.filter(c=>c.estado==='Finalizado'||c.estado==='Archivado').length;
+  const badge = document.getElementById('badge-finalizados');
+  if(badge){
+    badge.textContent = count>0 ? count : '';
+    badge.style.display = count>0 ? 'inline-flex' : 'none';
+  }
 }
 
 let proyectoActualId = null;
@@ -5017,6 +5112,142 @@ function guardarProyecto(silent=false){
   proy.fechaCierre = getV('proy-fecha-cierre');
   saveHistorico();
   if(!silent) showNotif('Proyecto guardado correctamente');
+}
+
+// ─── FINALIZADOS / ARCHIVADOS ───────────────────────────────────────────────
+function limpiarFiltrosFinalizados(){
+  ['fin-search','fin-filter-tipo','fin-filter-año'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value='';
+  });
+  var s=document.getElementById('fin-sort'); if(s) s.value='fecha_desc';
+  renderFinalizados();
+}
+
+function renderFinalizados(){
+  var q    = (document.getElementById('fin-search')?.value||'').toLowerCase().trim();
+  var tipo = document.getElementById('fin-filter-tipo')?.value||'';
+  var año  = document.getElementById('fin-filter-año')?.value||'';
+  var sort = document.getElementById('fin-sort')?.value||'fecha_desc';
+  var lista= document.getElementById('fin-lista');
+
+  var items = historicoCot.filter(function(c){
+    if(c.estado!=='Finalizado' && c.estado!=='Archivado') return false;
+    if(tipo && c.estado!==tipo) return false;
+    if(año && !(c.num||'').includes(año) && !(c.fecha||'').includes(año) && !(c._fechaFin||'').includes(año)) return false;
+    if(q){
+      var hay = ((c.num||'')+(c.cliente||'')+(c.ruc||'')+(c.desc||'')+(c.lugar||'')).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  items.sort(function(a,b){
+    switch(sort){
+      case 'fecha_asc':   return new Date(a._fechaFin||a.savedAt||0)-new Date(b._fechaFin||b.savedAt||0);
+      case 'total_desc':  return (b.totalConIGV||0)-(a.totalConIGV||0);
+      case 'total_asc':   return (a.totalConIGV||0)-(b.totalConIGV||0);
+      case 'cliente_asc': return (a.cliente||'').localeCompare(b.cliente||'');
+      default:            return new Date(b._fechaFin||b.savedAt||0)-new Date(a._fechaFin||a.savedAt||0);
+    }
+  });
+
+  var totalSum     = items.reduce(function(s,c){return s+(c.totalConIGV||0);},0);
+  var avgTicket    = items.length ? totalSum/items.length : 0;
+  var uniqueClients= new Set(items.map(function(c){return c.cliente||'';})).size;
+  var countFin     = historicoCot.filter(function(c){return c.estado==='Finalizado';}).length;
+  var countArch    = historicoCot.filter(function(c){return c.estado==='Archivado';}).length;
+
+  function setT(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; }
+  setT('fin-count-finalizado', countFin);
+  setT('fin-count-archivado',  countArch);
+  setT('fin-total-sum',        fmt(totalSum));
+  setT('fin-stat-count',       items.length);
+  setT('fin-stat-total',       fmt(totalSum));
+  setT('fin-stat-avg',         fmt(avgTicket));
+  setT('fin-stat-clientes',    uniqueClients);
+
+  if(!items.length){
+    lista.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div><div class="empty-text">'+(q||tipo||año?'No hay resultados con los filtros aplicados.':'No hay cotizaciones finalizadas aún.<br>Cambia el estado a "Finalizado" o "Archivado" desde el Historial.')+'</div></div>';
+    return;
+  }
+
+  lista.innerHTML = items.map(function(c){
+    var esFin   = c.estado==='Finalizado';
+    var color   = esFin ? '#283593' : '#6A1B9A';
+    var bgCol   = esFin ? '#E8EAF6' : '#F3E5F5';
+    var icon    = esFin ? '✅' : '📦';
+    var fechaFmt= c.fecha ? new Date(c.fecha+'T12:00').toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
+    var fechaFinFmt = c._fechaFin ? new Date(c._fechaFin).toLocaleDateString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
+    var proy = c.proyecto||{};
+    var margenReal = null;
+    if(proy.materiales){
+      var gasto = proy.materiales.filter(function(m){return m.comprado;}).reduce(function(s,m){return s+(m.precioReal||0)*(m.qty||1);},0);
+      gasto += (proy.gastosExtra||[]).reduce(function(s,g){return s+g.monto;},0);
+      margenReal = (c.totalConIGV||0) - gasto;
+    }
+
+    return '<div style="background:var(--surface);border:1px solid var(--border2);border-radius:12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)">'
+      +'<div style="background:'+bgCol+';padding:8px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid '+color+'22">'
+      +'<span style="font-size:14px">'+icon+'</span>'
+      +'<span style="font-size:11px;font-weight:700;color:'+color+';text-transform:uppercase;letter-spacing:.5px">'+c.estado+'</span>'
+      +'<span style="font-size:11px;color:'+color+';opacity:.7">Cerrado: '+fechaFinFmt+'</span>'
+      +'<span style="flex:1"></span>'
+      +'<span style="font-family:\'IBM Plex Mono\',monospace;font-size:14px;font-weight:700;color:'+color+'">'+fmt(c.totalConIGV||0)+'</span>'
+      +'</div>'
+      +'<div style="padding:12px 16px;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start">'
+      +'<div>'
+      +'<div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;flex-wrap:wrap">'
+      +'<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:600;color:var(--accent)">'+c.num+'</span>'
+      +(c.cat?'<span style="font-size:10px;background:var(--surface2);padding:2px 6px;border-radius:4px;color:var(--text3)">'+c.cat+'</span>':'')
+      +(c.firma?'<span style="font-size:10px;color:var(--green);font-weight:600">✍ Firmada</span>':'')
+      +'</div>'
+      +'<div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:3px">'+c.cliente+(c.ruc?' <span style="font-size:11px;color:var(--text3);font-weight:400">RUC: '+c.ruc+'</span>':'')+'</div>'
+      +'<div style="font-size:12px;color:var(--text2)">'+(c.desc||'—')+(c.lugar?' · '+c.lugar:'')+'</div>'
+      +'<div style="font-size:11px;color:var(--text3);margin-top:4px">Fecha cot.: '+fechaFmt+' · Pago: '+(c.condpago||'—')+'</div>'
+      +(margenReal!==null?'<div style="font-size:11px;margin-top:4px;font-weight:600;color:'+(margenReal>=0?'#375623':'#A32D2D')+'">Margen real: '+fmt(margenReal)+'</div>':'')
+      +'</div>'
+      +'<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">'
+      +'<button class="btn btn-outline btn-sm" onclick="verHistorico('+c.id+')">◈ Ver PDF</button>'
+      +'<button class="btn btn-sm" onclick="abrirProyecto('+c.id+',\'finalizado\')" style="background:#375623;color:#fff;border:none;font-size:11px">📋 Proyecto</button>'
+      +'<button class="btn btn-outline btn-sm" onclick="devolverAHistorico('+c.id+')">↺ Reabrir</button>'
+      +'</div>'
+      +'</div></div>';
+  }).join('');
+}
+
+function devolverAHistorico(id){
+  var c = historicoCot.find(function(h){return h.id===id;});
+  if(!c) return;
+  if(!confirm('¿Reabrir esta cotización? Su estado cambiará de vuelta a "Aprobada".')) return;
+  c.estado = 'Aprobada';
+  delete c._fechaFin;
+  saveHistorico();
+  renderFinalizados();
+  renderHistorico();
+  actualizarBadgeFinalizados();
+  showNotif(c.num+' reabierta como Aprobada');
+}
+
+function exportarFinalizadosCSV(){
+  var items = historicoCot.filter(function(c){return c.estado==='Finalizado'||c.estado==='Archivado';});
+  if(!items.length){ showNotif('No hay cotizaciones finalizadas para exportar','error'); return; }
+  var hdr = ['N Cotizacion','Estado','Cliente','RUC','Descripcion','Lugar','Fecha Cotizacion','Fecha Cierre','Total IGV','Cond.Pago'];
+  var rows = items.map(function(c){
+    return [
+      c.num||'', c.estado||'', c.cliente||'', c.ruc||'',
+      (c.desc||'').replace(/,/g,';'), (c.lugar||'').replace(/,/g,';'),
+      c.fecha||'',
+      c._fechaFin ? new Date(c._fechaFin).toLocaleDateString('es-PE') : '',
+      (c.totalConIGV||0).toFixed(2), c.condpago||''
+    ];
+  });
+  var csv = [hdr].concat(rows).map(function(r){return r.join(',');}).join('\n');
+  var blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href=url; a.download='TYC_Finalizados_'+new Date().getFullYear()+'.csv';
+  a.click(); URL.revokeObjectURL(url);
+  showNotif('CSV exportado ('+items.length+' registros)');
 }
 
 // ─── PAPELERA ──────────────────────────────────────────────────────────────
@@ -5745,6 +5976,8 @@ document.addEventListener('DOMContentLoaded', ()=>{
   setTimeout(initFirmaCanvas, 300);
   // Init papelera
   loadPapelera();
+  // Update finalizados badge
+  actualizarBadgeFinalizados();
   // Init auto-height textareas
   document.querySelectorAll('.auto-height').forEach(el=>autoHeight(el));
 });
