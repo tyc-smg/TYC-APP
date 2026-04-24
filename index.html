@@ -2424,7 +2424,7 @@ function verDetalle(idx){
         <div><div class="client-label">Proveedor</div>${p.prov}</div>
         <div><div class="client-label">Documento</div>${p.doc}</div>
         <div><div class="client-label">Fecha</div>${p.fecha}</div>
-        ${p.obs?`<div><div class="client-label">Observaciones</div>${p.obs}</div>`:''}
+        ${p.obs?('<div><div class="client-label">Observaciones</div>'+p.obs+'</div>'):''}
       </div>
     </div>`;
   document.getElementById('modal-add-cot').onclick = ()=>{addFromList(idx);closeModal('modal-detalle');};
@@ -2474,7 +2474,7 @@ function renderPriceHistory(n){
   if(!hist.length){el.innerHTML='<div style="font-size:11px;color:var(--text3);font-style:italic">Sin historial previo de precios</div>';return;}
   el.innerHTML = `<div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Historial de precios</div>
     <div style="display:flex;flex-direction:column;gap:4px;max-height:100px;overflow-y:auto">
-    ${hist.slice().reverse().map((h,i)=>`
+    ${hist.slice().reverse().map(function(h,i){ return `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 10px;background:${i===0?'var(--blue-light)':'var(--surface)'};border-radius:5px;font-size:11px;border:1px solid var(--border2)">
         <div>
           <span style="font-family:'IBM Plex Mono',monospace;font-weight:600">S/ ${fmtN(h.sin)}</span>
@@ -2484,7 +2484,7 @@ function renderPriceHistory(n){
           <div>${h.prov}</div>
           <div style="font-size:10px">${h.fecha} · ${h.doc}</div>
         </div>
-      </div>`).join('')}
+      </div>`; }).join('')}
     </div>`;
 }
 
@@ -3131,8 +3131,8 @@ function renderFotosGrid(){
         <input type="text" value="${f.caption||''}" placeholder="Descripción de foto..."
           style="width:100%;border:none;background:transparent;font-size:11px;color:var(--text);outline:none;font-family:inherit"
           oninput="vtFotos[${i}].caption=this.value">
-        ${fotoMB ? `<div style="font-size:9px;color:${sobreLimite?'var(--red)':'var(--text3)'};margin-top:2px;font-family:'IBM Plex Mono',monospace">${fotoMB} MB${sobreLimite?' ⚠ EXCEDE LÍMITE':''}</div>` : ''}
-        ${f.comprimida ? `<div style="font-size:9px;color:var(--green);margin-top:1px">⚡ Comprimida: ${f.antesMB}→${f.despuesMB} MB</div>` : ''}
+        ${fotoMB ? '<div style="font-size:9px;color:'+(sobreLimite?'var(--red)':'var(--text3)')+';margin-top:2px;font-family:\'IBM Plex Mono\',monospace">'+fotoMB+' MB</div>' : ''}
+        ${f.comprimida ? '<div style="font-size:9px;color:var(--green);margin-top:1px">⚡ Comprimida: '+f.antesMB+'→'+f.despuesMB+' MB</div>' : ''}
       </div>
       <button onclick="eliminarFoto(${i})" style="position:absolute;top:4px;right:4px;background:rgba(192,0,0,0.85);color:#fff;border:none;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;padding:0">✕</button>`;
     grid.insertBefore(div, document.getElementById('vt-fotos-empty'));
@@ -3463,16 +3463,16 @@ function renderPreview(){
           </div>
         </div>
         <div style="text-align:right;font-size:11px;color:var(--text2)">
-          ${vtFecha?`<div><strong>Fecha:</strong> ${new Date(vtFecha+'T12:00').toLocaleDateString('es-PE',{day:'2-digit',month:'long',year:'numeric'})}</div>`:''}
-          ${vtHora?`<div><strong>Hora:</strong> ${vtHora}</div>`:''}
-          ${vtTecnico?`<div><strong>Técnico:</strong> ${vtTecnico}</div>`:''}
+          ${vtFecha?('<div><strong>Fecha:</strong> '+new Date(vtFecha+'T12:00').toLocaleDateString('es-PE',{day:'2-digit',month:'long',year:'numeric'})+'</div>'):''}
+          ${vtHora?('<div><strong>Hora:</strong> '+vtHora+'</div>'):''}
+          ${vtTecnico?('<div><strong>Técnico:</strong> '+vtTecnico+'</div>'):''}
         </div>
       </div>
       <div style="display:grid;gap:12px">
-        ${vtUbic?`<div class="print-section"><div class="print-section-title">Ubicación / Área inspeccionada</div><div style="font-size:13px">${vtUbic}</div></div>`:''}
-        ${vtProblema?`<div class="print-section" style="border-left-color:var(--red)"><div class="print-section-title" style="color:var(--red)">Problema / Condición encontrada</div><div style="font-size:13px;white-space:pre-wrap;word-break:break-word;line-height:1.7">${vtProblema}</div></div>`:''}
-        ${vtTrabajos?`<div class="print-section" style="border-left-color:var(--green)"><div class="print-section-title" style="color:var(--green)">Trabajos recomendados</div><div style="font-size:13px;white-space:pre-wrap;word-break:break-word;line-height:1.7">${vtTrabajos}</div></div>`:''}
-        ${vtObsRel?`<div class="print-section"><div class="print-section-title">Observaciones adicionales</div><div style="font-size:13px;white-space:pre-wrap;word-break:break-word;line-height:1.7">${vtObsRel}</div></div>`:''}
+        ${vtUbic?('<div class="print-section"><div class="print-section-title">Ubicación / Área inspeccionada</div><div style="font-size:12px">'+vtUbic+'</div></div>'):''}
+        ${vtProblema?('<div class="print-section" style="border-left-color:var(--red)"><div class="print-section-title" style="color:var(--red)">Problema / Hallazgo</div><div style="font-size:12px">'+vtProblema+'</div></div>'):''}
+        ${vtTrabajos?('<div class="print-section" style="border-left-color:var(--green)"><div class="print-section-title" style="color:var(--green)">Trabajos realizados / Solución</div><div style="font-size:12px">'+vtTrabajos+'</div></div>'):''}
+        ${vtObsRel?('<div class="print-section"><div class="print-section-title">Observaciones adicionales</div><div style="font-size:12px">'+vtObsRel+'</div></div>'):''}
         ${vtFotos.length?`
         <div>
           <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Registro fotográfico (${vtFotos.length} foto${vtFotos.length!==1?'s':''})</div>
@@ -3482,7 +3482,7 @@ function renderPreview(){
                 <img src="${f.dataUrl}" alt="Foto ${i+1}" style="width:100%;height:140px;object-fit:cover;display:block">
                 <div style="padding:6px 8px;background:var(--surface2)">
                   <div style="font-size:10px;color:var(--text3)">Foto ${i+1}</div>
-                  ${f.caption?`<div style="font-size:11px;color:var(--text)">${f.caption}</div>`:''}
+                  ${f.caption?('<div style="font-size:11px;color:var(--text)">'+f.caption+'</div>'):''}
                 </div>
               </div>`).join('')}
           </div>
@@ -3547,40 +3547,19 @@ function renderPreview(){
 
     <div class="print-total-block">
       <div class="print-totals">
-        ${moOnly>0?`<div class="print-total-row"><span style="color:var(--text2)">① Mano de Obra</span><span class="pval">${fmtN(moOnly)}</span></div>`:''}
-        ${diarOnly>0?`<div class="print-total-row"><span style="color:var(--text2)">② Viáticos y Movilidad</span><span class="pval">${fmtN(diarOnly)}</span></div>`:''}
-        ${matResult&&matResult.sum?`<div class="print-total-row"><span style="color:var(--text2)">③ Materiales</span><span class="pval">${fmtN(matResult.sum)}</span></div>`:''}
-        ${herrResult&&herrResult.sum?`<div class="print-total-row"><span style="color:var(--text2)">④ Herramientas</span><span class="pval">${fmtN(herrResult.sum)}</span></div>`:''}
-        ${adminResult&&adminResult.sum?`<div class="print-total-row"><span style="color:var(--text2)">⑤ Costos admin.</span><span class="pval">${fmtN(adminResult.sum)}</span></div>`:''}
-        ${segOnly>0?`<div class="print-total-row" style="background:#FFF0F0"><span style="color:#A32D2D">🛡 Personal Seguridad/HSE</span><span class="pval" style="color:#A32D2D">${fmtN(segOnly)}</span></div>`:''}
+        ${moOnly>0?('<div class="print-total-row"><span style="color:var(--text2)">① Mano de Obra</span><span class="pval">'+fmtN(moOnly)+'</span></div>'):''}
+        ${diarOnly>0?('<div class="print-total-row"><span style="color:var(--text2)">② Viáticos y Movilidad</span><span class="pval">'+fmtN(diarOnly)+'</span></div>'):''}
+        ${matResult&&matResult.sum?('<div class="print-total-row"><span style="color:var(--text2)">③ Materiales</span><span class="pval">'+fmtN(matResult.sum)+'</span></div>'):''}
+        ${herrResult&&herrResult.sum?('<div class="print-total-row"><span style="color:var(--text2)">④ Herramientas</span><span class="pval">'+fmtN(herrResult.sum)+'</span></div>'):''}
+        ${adminResult&&adminResult.sum?('<div class="print-total-row"><span style="color:var(--text2)">⑤ Costos admin.</span><span class="pval">'+fmtN(adminResult.sum)+'</span></div>'):''}
+        ${segOnly>0?('<div class="print-total-row" style="background:#FFF0F0"><span style="color:#A32D2D">🛡 Personal Seguridad/HSE</span><span class="pval">'+fmtN(segOnly)+'</span></div>'):''}
         <div class="print-total-row" style="border-top:2px solid var(--border2);margin-top:2px"><span style="font-weight:600">Subtotal (sin IGV)</span><span class="pval">${fmtN(grandVenta)}</span></div>
         <div class="print-total-row"><span>IGV 18%</span><span class="pval">${fmtN(grandVenta*0.18)}</span></div>
         <div class="print-total-row" style="${descPct>0?'text-decoration:line-through;opacity:.5':''}"><span>Total (c/ IGV)</span><span class="pval">S/ ${fmtN(grandVenta*1.18)}</span></div>
-        ${descPct>0?`
-        <div class="print-total-row" style="background:#FFFBEA">
-          <span style="color:#854F0B">Descuento aplicado (${descPct}%)</span>
-          <span class="pval" style="color:#854F0B">− S/ ${fmtN(grandVenta*1.18*(descPct/100))}</span>
-        </div>
-        <div class="print-total-row final" style="background:#F0FFF4;border:2px solid #375623">
-          <span style="color:#375623;font-size:14px">PRECIO AL CLIENTE</span>
-          <span class="pval" style="color:#375623;font-size:18px">S/ ${fmtN(grandVenta*1.18*(1-descPct/100))}</span>
-        </div>`:`
-        <div class="print-total-row final"><span>TOTAL AL CLIENTE</span><span class="pval">S/ ${fmtN(grandVenta*1.18)}</span></div>`}
+        ${descPct>0?('<div class="print-total-row" style="background:#FFFBEA"><span style="color:#854F0B">Descuento aplicado ('+descPct+'%)</span><span class="pval" style="color:#854F0B">− S/ '+fmtN(grandVenta*1.18*(descPct/100))+'</span></div><div class="print-total-row final" style="background:#F0FFF4;border:2px solid #375623"><span style="color:#375623;font-size:14px">PRECIO AL CLIENTE</span><span class="pval" style="color:#375623;font-size:18px">S/ '+fmtN(grandVenta*1.18*(1-descPct/100))+'</span></div>'):('<div class="print-total-row final"><span>TOTAL AL CLIENTE</span><span class="pval">S/ '+fmtN(grandVenta*1.18)+'</span></div>')}
       </div>
     </div>
-    ${segOnly>0?`
-    <div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div style="background:#FFF8F0;border:2px solid #C9A227;border-radius:10px;padding:14px;text-align:center">
-        <div style="font-size:10px;font-weight:600;color:#854F0B;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">⊘ Sin Personal Seguridad/HSE</div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;color:#854F0B;margin-bottom:2px">${fmtN(totalSinSeg*1.18)}</div>
-        <div style="font-size:10px;color:var(--text3)">c/ IGV · sin Seguridad/HSE</div>
-      </div>
-      <div style="background:#FEF0F0;border:2px solid #A32D2D;border-radius:10px;padding:14px;text-align:center">
-        <div style="font-size:10px;font-weight:600;color:#A32D2D;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">🛡 Con Personal Seguridad/HSE</div>
-        <div style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:600;color:#A32D2D;margin-bottom:2px">${fmtN(grandVenta*1.18)}</div>
-        <div style="font-size:10px;color:var(--text3)">c/ IGV · incluye Seguridad/HSE</div>
-      </div>
-    </div>`:''}
+    ${segOnly>0?('<div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px"><div style="background:#FFF8F0;border:2px solid #C9A227;border-radius:10px;padding:14px;text-align:center"><div style="font-size:10px;font-weight:600;color:#854F0B;text-transform:uppercase;margin-bottom:6px">⊘ Sin Personal Seguridad/HSE</div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:14px;font-weight:600;color:#854F0B;margin-bottom:2px">'+fmtN(totalSinSeg*1.18)+'</div><div style="font-size:10px;color:var(--text3)">c/ IGV · sin Seguridad/HSE</div></div><div style="background:#FEF0F0;border:2px solid #A32D2D;border-radius:10px;padding:14px;text-align:center"><div style="font-size:10px;font-weight:600;color:#A32D2D;text-transform:uppercase;margin-bottom:6px">🛡 Con Personal Seguridad/HSE</div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:14px;font-weight:600;color:#A32D2D;margin-bottom:2px">'+fmtN(grandVenta*1.18)+'</div><div style="font-size:10px;color:var(--text3)">c/ IGV · incluye Seguridad/HSE</div></div></div>'):''}
 
     <div style="margin-top:20px;padding:12px 16px;background:var(--surface2);border-radius:8px;font-size:11px;color:var(--text3)">
       <strong style="color:var(--text2)">Condiciones generales:</strong>
@@ -3590,14 +3569,7 @@ function renderPreview(){
 
     <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:32px;padding-top:16px;border-top:1px solid var(--border2)">
       <div style="text-align:center">
-        ${getFirmaDataUrl() ? `
-          <div style="height:64px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:4px">
-            <img src="${getFirmaDataUrl()}" style="max-height:64px;max-width:220px;object-fit:contain">
-          </div>
-          <div style="border-top:1px solid var(--text2);padding-top:6px;margin-bottom:4px"></div>
-        ` : `
-          <div style="height:64px;border-bottom:1px solid var(--text2);margin-bottom:8px"></div>
-        `}
+        ${getFirmaDataUrl() ? '<div style="height:64px;display:flex;align-items:flex-end;justify-content:center;margin-bottom:4px"><img src="'+getFirmaDataUrl()+'" style="max-height:64px;max-width:220px;object-fit:contain"></div><div style="border-top:1px solid var(--text2);padding-top:6px;margin-bottom:4px"></div>' : '<div style="height:64px;border-bottom:1px solid var(--text2);margin-bottom:8px"></div>'}
         <div style="font-size:12px;font-weight:600">${document.getElementById('firma-nombre').value||'TYC SERVICIOS Y MANTENIMIENTO GENERALES S.R.L.'}</div>
         <div style="font-size:11px;color:var(--text3)">${document.getElementById('firma-cargo').value||'Representante Legal'}</div>
       </div>
@@ -4463,7 +4435,7 @@ function previsualizarJSON(input){
         </div>
         <div style="margin-bottom:6px;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px">Categorías</div>
         <div style="margin-bottom:10px;display:flex;flex-wrap:wrap">${catRows}</div>
-        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Primeros productos: ${arr.slice(0,4).map(p=>`<b>${p.name}</b>`).join(' · ')}${arr.length>4?' …':''}</div>
+        <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Primeros productos: ${arr.slice(0,4).map(function(p){return '<b>'+p.name+'</b>';}).join(' · ')}${arr.length>4?' …':''}</div>
         <div style="font-size:11px;color:var(--text3);margin-top:6px;padding:8px 10px;background:var(--yellow);border-radius:6px">
           ⚠ Reemplazará los <b>${productos.length}</b> productos actuales con los <b>${arr.length}</b> del archivo.
         </div>`;
@@ -5498,16 +5470,16 @@ function renderHistorico(){
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
           <span class="hist-num">${c.num}</span>
           <span class="badge-estado ${estadoClass}">${c.estado}</span>
-          ${c.cat?`<span style="font-size:11px;color:var(--text3);background:var(--surface2);padding:2px 6px;border-radius:4px">${c.cat}</span>`:''}
+          ${c.cat?('<span style="font-size:11px;color:var(--text3);background:var(--surface2);padding:2px 6px;border-radius:4px">'+c.cat+'</span>'):''}
           ${c.firma?'<span style="font-size:10px;color:var(--green);font-weight:600">✍ Firmada</span>':''}
         </div>
-        <div class="hist-cliente">${c.cliente}${c.ruc?` <span style="font-size:11px;color:var(--text3);font-weight:400">RUC: ${c.ruc}</span>`:''}</div>
-        <div class="hist-meta">${c.desc||''}${c.lugar?` <b>·</b> ${c.lugar}`:''}${c.validez?` <b>·</b> ${c.validez}`:''}</div>
+        <div class="hist-cliente">${c.cliente}${c.ruc?' <span style="font-size:11px;color:var(--text3);font-weight:400">RUC: '+c.ruc+'</span>':''}</div>
+        <div class="hist-meta">${c.desc||''}${c.lugar?' <b>·</b> '+c.lugar:''}${c.validez?' <b>·</b> '+c.validez:''}</div>
         <div class="hist-meta" style="margin-top:2px;color:var(--text3)">Pago: ${c.condpago||'—'} · ${savedFmt}</div>
       </div>
       <div style="text-align:right;flex-shrink:0">
         <div class="hist-total">${fmt(precioFinal)}</div>
-        ${descPctVal>0?`<div style="font-size:10px;color:#854F0B;font-weight:500">−${descPctVal}% desc.</div>`:''}
+        ${descPctVal>0?('<div style="font-size:10px;color:#854F0B;font-weight:500">−'+descPctVal+'% desc.</div>'):''}
         <div class="hist-fecha">${fechaFmt}</div>
       </div>
       <div class="hist-actions" style="flex-wrap:wrap">
@@ -5706,7 +5678,7 @@ function renderRequisitos(){
       <div style="flex:1;min-width:0">
         <div style="font-size:12px;font-weight:600;color:${r.ok?'#375623':'var(--text)'}">${r.req}</div>
         <div style="font-size:10px;color:var(--text3);margin-top:1px">${r.desc}</div>
-        ${r.archivo?`<div style="font-size:10px;color:var(--green);margin-top:2px">📎 ${r.archivo}</div>`:''}
+        ${r.archivo?('<div style="font-size:10px;color:var(--green);margin-top:2px">📎 '+r.archivo+'</div>'):''  }
       </div>
       <label style="cursor:pointer;font-size:10px;color:var(--accent2);white-space:nowrap">
         📎
@@ -5836,7 +5808,7 @@ function renderMatControl(){
           oninput="actualizarPrecioMat(${i},this.value)">
         <span style="font-size:10px;color:var(--text3)">Cot: S/ ${fmtN(m.costoCot)}</span>
       </div>`:''}
-      ${m.seccion?`<div style="font-size:10px;color:var(--text3);margin-top:2px">${m.seccion}</div>`:''}
+      ${m.seccion?('<div style="font-size:10px;color:var(--text3);margin-top:2px">'+m.seccion+'</div>'):''}
     </div>`;
   }).join('');
 }
@@ -5995,9 +5967,9 @@ function renderPersonal(){
         <button onclick="eliminarPersonal(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:11px;padding:2px 6px">✕</button>
       </div>
       <div style="display:flex;gap:4px;flex-wrap:wrap">
-        ${Object.entries(p.certs).map(([k,v])=>`<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:${v?'#E8F5E9':'#FFEBEE'};color:${v?'#375623':'#A32D2D'};font-weight:500">${v?'✓':'✗'} ${certLabels[k]}</span>`).join('')}
+        ${Object.entries(p.certs).map(function(e){ var k=e[0],v=e[1]; return '<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:'+(v?'#E8F5E9':'var(--surface2)')+';color:'+(v?'var(--green)':'var(--text3)')+'">'+k+'</span>'; }).join('')}
       </div>
-      ${p.docs&&p.docs.length?`<div style="font-size:10px;color:var(--text3);margin-top:4px">📎 ${p.docs.length} doc${p.docs.length!==1?'s':''} adjuntos</div>`:''}
+      ${p.docs&&p.docs.length?('<div style="font-size:10px;color:var(--text3);margin-top:4px">📎 '+p.docs.length+' doc'+(p.docs.length>1?'s':'')+'</div>'):''}
     </div>`;
   }).join('');
 }
