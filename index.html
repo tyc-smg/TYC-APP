@@ -933,7 +933,28 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
       <button class="btn btn-primary btn-sm" onclick="imprimirDoc()" title="Imprime en papel o en cualquier impresora conectada">⎙ Imprimir</button>
       <button class="btn btn-sm" style="background:#C00000;color:#fff;border:none" onclick="exportarPDF()" title="Genera PDF limpio solo con datos de TYC — sin encabezado del navegador">⬇ Guardar PDF</button>
     </div>
-    <button class="btn btn-sm" style="background:#375623;color:#fff;border:none;font-weight:600" onclick="generarListaCompra()" title="Lista de materiales para compra con membrete TYC">🛒 Lista de Compras</button>
+    <div style="position:relative;display:inline-block" id="lista-compra-menu">
+      <button class="btn btn-sm" style="background:#375623;color:#fff;border:none;font-weight:600;display:flex;align-items:center;gap:5px" onclick="toggleListaCompraMenu()" title="Opciones de lista de materiales">
+        🛒 Lista de Materiales <span style="font-size:9px;opacity:.8">▼</span>
+      </button>
+      <div id="lista-compra-dropdown" style="display:none;position:absolute;top:calc(100% + 4px);left:0;z-index:999;background:var(--surface);border:1px solid var(--border2);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.18);min-width:280px;overflow:hidden">
+        <div style="padding:8px 14px;background:#375623;color:#fff;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Selecciona el tipo de lista</div>
+        <button onclick="generarListaCompra();toggleListaCompraMenu()" style="width:100%;padding:12px 16px;background:none;border:none;border-bottom:1px solid var(--border2);cursor:pointer;text-align:left;display:flex;gap:10px;align-items:flex-start" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='none'">
+          <span style="font-size:18px;flex-shrink:0">📋</span>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">Lista de Compras completa</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">Con precios, subtotales e IGV. Para uso interno y control de compras.</div>
+          </div>
+        </button>
+        <button onclick="generarSolicitudCotizacion();toggleListaCompraMenu()" style="width:100%;padding:12px 16px;background:none;border:none;cursor:pointer;text-align:left;display:flex;gap:10px;align-items:flex-start" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='none'">
+          <span style="font-size:18px;flex-shrink:0">📤</span>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--text)">Solicitud de cotización a proveedor</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:2px">Sin precios. Solo descripción, unidad y cantidad. Para enviar a tiendas y solicitar precios.</div>
+          </div>
+        </button>
+      </div>
+    </div>
     <button class="btn btn-gold btn-sm" onclick="exportarCSV()">↓ CSV</button>
     <button class="btn btn-outline btn-sm" onclick="copiarParaSheets()">⊞ Sheets</button>
     <div id="preview-saved-badge" style="display:none;background:var(--green-light);color:var(--green);padding:5px 12px;border-radius:6px;font-size:12px;font-weight:500">✓ Guardada en historial</div>
@@ -3647,6 +3668,219 @@ function generarListaCompra(){
     +'<div class="firma-line"><\/div>'
     +'<div style="font-weight:700;font-size:12px">RESPONSABLE DE COMPRAS<\/div>'
     +'<div style="font-size:11px;color:#555">Firma / Nombre / Fecha<\/div>'
+    +'<\/div><\/div>'
+
+    +'<\/body><\/html>');
+  win.document.close();
+}
+
+function toggleListaCompraMenu(){
+  const dd = document.getElementById('lista-compra-dropdown');
+  if(!dd) return;
+  const open = dd.style.display !== 'none';
+  dd.style.display = open ? 'none' : 'block';
+  // Close on outside click
+  if(!open){
+    setTimeout(function(){
+      document.addEventListener('click', function closeDD(e){
+        if(!document.getElementById('lista-compra-menu').contains(e.target)){
+          dd.style.display='none';
+          document.removeEventListener('click', closeDD);
+        }
+      });
+    }, 10);
+  }
+}
+
+function generarSolicitudCotizacion(){
+  // Solicitud SIN precios — solo descripcion, unidad, cantidad — para enviar a proveedores
+  const cotNum   = document.getElementById('cot-num').value    || 'COT-XXX-2026';
+  const desc     = document.getElementById('cot-desc').value   || '—';
+  const lugar    = document.getElementById('cot-lugar').value  || '—';
+  const fechaRaw = document.getElementById('cot-fecha').value;
+  const fechaFmt = fechaRaw
+    ? new Date(fechaRaw+'T12:00').toLocaleDateString('es-PE',{day:'2-digit',month:'long',year:'numeric'})
+    : new Date().toLocaleDateString('es-PE',{day:'2-digit',month:'long',year:'numeric'});
+
+  // Only material sections (exclude MO, Viáticos, Admin)
+  const SEC_MAT = [
+    {idx:2, label:'Materiales e Insumos',   bg:'#375623'},
+    {idx:3, label:'Herramientas y Equipos', bg:'#634B09'},
+    {idx:5, label:'Seguridad / HSE',        bg:'#A32D2D'},
+    {idx:0, label:'Mano de Obra',           bg:'#1F3864'},
+    {idx:1, label:'Viáticos y Movilidad',   bg:'#854F0B'},
+    {idx:4, label:'Costos Administrativos', bg:'#555555'},
+  ];
+
+  let allRows = '';
+  let totalItems = 0;
+  let numGlobal  = 0;
+
+  SEC_MAT.forEach(function(sec){
+    const s = COT_SECTIONS[sec.idx];
+    if(!s || !s.items || !s.items.length) return;
+    totalItems += s.items.length;
+
+    const rows = s.items.map(function(item){
+      numGlobal++;
+      return '<tr style="'+(numGlobal%2===0?'background:#FAFAFA':'background:#fff')+'">'
+        +'<td style="padding:9px 10px;border:1px solid #E5E7EB;font-size:12px;text-align:center;color:#888">'+numGlobal+'<\/td>'
+        +'<td style="padding:9px 10px;border:1px solid #E5E7EB;font-size:13px;font-weight:600;color:#111">'+(item.desc||'—')+'<\/td>'
+        +'<td style="padding:9px 10px;border:1px solid #E5E7EB;font-size:12px;color:#555">'+(item.spec||'—')+'<\/td>'
+        +'<td style="padding:9px 10px;border:1px solid #E5E7EB;font-size:12px;text-align:center;font-weight:500">'+(item.unit||'—')+'<\/td>'
+        +'<td style="padding:9px 10px;border:1px solid #E5E7EB;font-size:13px;text-align:center;font-weight:700;color:#1F3864">'+(item.qty||0)+'<\/td>'
+        +'<td style="padding:9px 10px;border:1px solid #E5E7EB;font-size:12px">___________________________<\/td>'
+        +'<td style="padding:9px 10px;border:1px solid #E5E7EB;font-size:12px">___________________________<\/td>'
+        +'<\/tr>';
+    }).join('');
+
+    allRows += '<tr><td colspan="7" style="padding:8px 12px;background:'+sec.bg+';color:#fff;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.6px;border:1px solid '+sec.bg+'">'+sec.label+' &nbsp;('+s.items.length+' ítems)<\/td><\/tr>'
+      + rows;
+  });
+
+  if(!totalItems){
+    showNotif('No hay ítems en la cotización para generar la solicitud','error');
+    return;
+  }
+
+  const logoSrc = typeof TYC_LOGO !== 'undefined' ? TYC_LOGO : '';
+  const win = window.open('','_blank','width=900,height=750,menubar=no,toolbar=no');
+  win.document.write('<!DOCTYPE html>\n<html lang="es"><head><meta charset="UTF-8">'
+    +'<title>Solicitud de Cotizaci\u00f3n \u2014 '+cotNum+'<\/title>'
+    +'<style>'
+    +'*{box-sizing:border-box;margin:0;padding:0}'
+    +'body{font-family:Arial,sans-serif;color:#111;background:#fff;padding:28px 32px;font-size:13px}'
+    +'.no-print{padding:10px 14px;background:#f5f5f5;border-radius:8px;display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap}'
+    +'.hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1F3864;padding-bottom:14px;margin-bottom:18px}'
+    +'.hdr-right{text-align:right;font-size:11px;color:#555;line-height:1.9}'
+    +'.doc-title{background:#1F3864;color:#fff;text-align:center;padding:12px;font-size:17px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;border-radius:6px;margin-bottom:6px}'
+    +'.doc-sub{text-align:center;font-size:12px;color:#555;margin-bottom:18px}'
+    +'.alert-box{background:#FEF9EE;border:1.5px solid #F0C040;border-radius:8px;padding:11px 16px;font-size:12px;color:#5A3E00;margin-bottom:18px;line-height:1.7}'
+    +'.datos-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}'
+    +'.dato-box{border:1px solid #E5E7EB;border-radius:8px;padding:10px 14px}'
+    +'.dato-label{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#1F3864;font-weight:700;margin-bottom:3px}'
+    +'.dato-val{font-size:13px;font-weight:600;color:#111}'
+    +'table{width:100%;border-collapse:collapse;margin-bottom:16px}'
+    +'th{background:#1F3864;color:#fff;padding:9px 10px;font-size:11px;text-align:left;border:1px solid #1F3864;font-weight:600}'
+    +'th.c{text-align:center}'
+    +'.footer-box{border:1.5px solid #1F3864;border-radius:8px;padding:14px 18px;margin-bottom:20px}'
+    +'.firma-grid{display:grid;grid-template-columns:1fr 1fr;gap:50px;margin-top:36px}'
+    +'.firma-box{text-align:center}'
+    +'.firma-line{border-top:1.5px solid #555;margin:55px 10px 7px}'
+    +'@media print{'
+    +'.no-print{display:none}'
+    +'body{padding:14px 18px}'
+    +'@page{margin:10mm;size:A4}'
+    +'img{-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    +'}'
+    +'<\/style><\/head><body>'
+
+    // Toolbar
+    +'<div class="no-print">'
+    +'<button onclick="window.print()" style="background:#1F3864;color:#fff;border:none;padding:8px 20px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600">\u2193 Guardar PDF<\/button>'
+    +'<button onclick="window.close()" style="background:#eee;border:1px solid #ccc;padding:8px 14px;border-radius:6px;font-size:13px;cursor:pointer">\u00d7 Cerrar<\/button>'
+    +'<span style="font-size:11px;color:#777">Al guardar: desactiva <strong>Encabezados y pies de p\u00e1gina<\/strong> en el di\u00e1logo de impresi\u00f3n<\/span>'
+    +'<\/div>'
+
+    // Membrete
+    +'<div class="hdr">'
+    +'<div style="display:flex;align-items:center;gap:14px">'
+    +(logoSrc ? '<img src="'+logoSrc+'" style="height:70px;object-fit:contain">' : '')
+    +'<div>'
+    +'<div style="font-size:14px;font-weight:700;color:#1F3864">TYC SERVICIOS Y MANTENIMIENTO GENERALES S.R.L.<\/div>'
+    +'<div style="font-size:11px;color:#555;margin-top:2px">RUC: 20614003546<\/div>'
+    +'<div style="font-size:11px;color:#555">Calle Javier P\u00e9rez de Cuellar N\u00b008, A.H. San Francisco, Paita<\/div>'
+    +'<div style="font-size:11px;color:#555">Tel: +51 943 435 224 &nbsp;\u00b7&nbsp; adm@tycsmg.com &nbsp;\u00b7&nbsp; www.tycsmg.com<\/div>'
+    +'<\/div><\/div>'
+    +'<div class="hdr-right">'
+    +'<div style="font-size:15px;font-weight:700;color:#1F3864">REF: '+cotNum+'<\/div>'
+    +'<div>Fecha: <strong>'+fechaFmt+'<\/strong><\/div>'
+    +'<div style="margin-top:6px;background:#FEF3E2;border:1px solid #F0C040;padding:4px 10px;border-radius:5px;font-weight:700;color:#854F0B;font-size:12px">SIN PRECIOS<\/div>'
+    +'<\/div><\/div>'
+
+    // Title
+    +'<div class="doc-title">\ud83d\udce4 Solicitud de Cotizaci\u00f3n de Precios<\/div>'
+    +'<div class="doc-sub">Por favor cotizar los siguientes materiales e indicar precios unitarios y totales<\/div>'
+
+    // Alert
+    +'<div class="alert-box">'
+    +'<strong>Estimado proveedor:<\/strong> Agradecemos su atenci\u00f3n. Solicitamos amablemente la cotizaci\u00f3n de los siguientes materiales para el servicio de <strong>'+desc+'<\/strong> a ejecutarse en <strong>'+lugar+'<\/strong>. '
+    +'Por favor completar los campos de <strong>Precio Unitario<\/strong> y <strong>Proveedor / Marca<\/strong> y devolver este documento a TYC Servicios.<br>'
+    +'Contacto: <strong>adm@tycsmg.com<\/strong> &nbsp;\u00b7&nbsp; <strong>+51 943 435 224<\/strong>'
+    +'<\/div>'
+
+    // Datos
+    +'<div class="datos-grid">'
+    +'<div class="dato-box">'
+    +'<div class="dato-label">Referencia interna<\/div><div class="dato-val">'+cotNum+'<\/div>'
+    +'<\/div>'
+    +'<div class="dato-box">'
+    +'<div class="dato-label">Servicio \/ Obra<\/div><div class="dato-val">'+desc+'<\/div>'
+    +'<\/div>'
+    +'<div class="dato-box">'
+    +'<div class="dato-label">Ubicaci\u00f3n<\/div><div class="dato-val">'+lugar+'<\/div>'
+    +'<\/div>'
+    +'<div class="dato-box" style="background:#E8F5E9;border-color:#A5D6A7">'
+    +'<div class="dato-label" style="color:#375623">Fecha requerida respuesta<\/div>'
+    +'<div class="dato-val">___________________________<\/div>'
+    +'<\/div>'
+    +'<\/div>'
+
+    // Table
+    +'<table>'
+    +'<thead><tr>'
+    +'<th class="c" style="width:38px">#<\/th>'
+    +'<th>Descripci\u00f3n del material<\/th>'
+    +'<th>Especificaci\u00f3n \/ Marca sugerida<\/th>'
+    +'<th class="c" style="width:55px">Unid.<\/th>'
+    +'<th class="c" style="width:55px">Cant.<\/th>'
+    +'<th style="width:130px">Precio Unit. (S\/)<\/th>'
+    +'<th style="width:130px">Proveedor \/ Marca<\/th>'
+    +'<\/tr><\/thead>'
+    +'<tbody>'+allRows+'<\/tbody>'
+    +'<tfoot>'
+    +'<tr style="background:#E8EAF6">'
+    +'<td colspan="4" style="padding:8px 12px;border:1px solid #C5CAE9;font-weight:700;font-size:12px;color:#1A237E;text-align:right">TOTALES:<\/td>'
+    +'<td style="padding:8px 12px;border:1px solid #C5CAE9;text-align:center;font-weight:700;color:#1A237E">'+totalItems+' \u00edtems<\/td>'
+    +'<td style="padding:8px 12px;border:1px solid #C5CAE9;font-size:12px">Total S\/ ___________<\/td>'
+    +'<td style="padding:8px 12px;border:1px solid #C5CAE9"><\/td>'
+    +'<\/tr>'
+    +'<\/tfoot><\/table>'
+
+    // Condiciones
+    +'<div class="footer-box">'
+    +'<div style="font-size:11px;font-weight:700;color:#1F3864;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Condiciones y observaciones del proveedor:<\/div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;font-size:12px">'
+    +'<div>'
+    +'<div style="margin-bottom:8px"><span style="font-weight:600">Tiempo de entrega:<\/span> ___________________________<\/div>'
+    +'<div style="margin-bottom:8px"><span style="font-weight:600">Forma de pago aceptada:<\/span> ___________________________<\/div>'
+    +'<div><span style="font-weight:600">Validez de la oferta:<\/span> ___________________________ d\u00edas<\/div>'
+    +'<\/div>'
+    +'<div>'
+    +'<div style="margin-bottom:8px"><span style="font-weight:600">Incluye IGV:<\/span> &nbsp; S\u00ed \u25a1 &nbsp; No \u25a1<\/div>'
+    +'<div style="margin-bottom:8px"><span style="font-weight:600">Observaciones:<\/span><\/div>'
+    +'<div style="border-bottom:1px solid #ddd;margin-bottom:4px">&nbsp;<\/div>'
+    +'<div style="border-bottom:1px solid #ddd;margin-bottom:4px">&nbsp;<\/div>'
+    +'<\/div>'
+    +'<\/div>'
+    +'<\/div>'
+
+    // Firmas
+    +'<div class="firma-grid">'
+    +'<div class="firma-box">'
+    +(getFirmaDataUrl()
+      ? '<img src="'+getFirmaDataUrl()+'" style="max-height:65px;max-width:190px;object-fit:contain;display:block;margin:0 auto">'
+      : '<div style="height:65px"><\/div>')
+    +'<div class="firma-line"><\/div>'
+    +'<div style="font-weight:700;font-size:12px">TYC SERVICIOS Y MANTENIMIENTO GENERALES S.R.L.<\/div>'
+    +'<div style="font-size:11px;color:#555">Jos\u00e9 Moncada Lluen \u2014 Gerente General &nbsp;\u00b7&nbsp; DNI 03463888<\/div>'
+    +'<\/div>'
+    +'<div class="firma-box">'
+    +'<div style="height:65px"><\/div>'
+    +'<div class="firma-line"><\/div>'
+    +'<div style="font-weight:700;font-size:12px">PROVEEDOR<\/div>'
+    +'<div style="font-size:11px;color:#555">Raz\u00f3n social: ___________________________<\/div>'
+    +'<div style="font-size:11px;color:#555;margin-top:4px">RUC: _______________ &nbsp; Tel: _______________<\/div>'
     +'<\/div><\/div>'
 
     +'<\/body><\/html>');
