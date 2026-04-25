@@ -3778,11 +3778,38 @@ function generarListaCompra(){
 }
 
 function abrirListaCompraCompleta(){
-  generarListaCompra();
-  // Switch to lista tab once modal opens
-  setTimeout(function(){ lcTabSwitch('lista'); }, 80);
+  // Load all items from cotizacion sections
+  _lcItems = [];
+  var SECS = [
+    {idx:0, label:'Mano de Obra',        bg:'#1F3864'},
+    {idx:1, label:'Viáticos y Movilidad', bg:'#854F0B'},
+    {idx:2, label:'Materiales e Insumos', bg:'#375623'},
+    {idx:3, label:'Herramientas',         bg:'#634B09'},
+    {idx:4, label:'Costos Admin.',        bg:'#555555'},
+    {idx:5, label:'Seguridad / HSE',      bg:'#A32D2D'},
+  ];
+  SECS.forEach(function(sec){
+    var s = COT_SECTIONS[sec.idx];
+    if(!s || !s.items || !s.items.length) return;
+    s.items.forEach(function(item){
+      _lcItems.push({
+        secLabel: sec.label, secBg: sec.bg,
+        desc:  item.desc  || '',
+        spec:  item.spec  || '',
+        unit:  item.unit  || 'und',
+        qty:   item.qty   || 1,
+        costo: item.costo || 0,
+        esExtra: false, comprado: false
+      });
+    });
+  });
+  if(!_lcItems.length){
+    showNotif('No hay ítems en la cotización','error');
+    return;
+  }
+  // Generate PDF directly — no modal needed
+  _lcPDFCompras();
 }
-
 
 function _lcRender(){
   var tbody = document.getElementById('lc-tbody');
@@ -4005,58 +4032,161 @@ function _lcInsertarCatalogo(name,spec,unit,precio,secIdx){
 
 // ── Generar PDF de compras (interno, con precios) ────────────────────────────
 function _lcPDFCompras(){
-  if(!_lcItems.length){showNotif('Lista vacía','error');return;}
-  var cotNum=document.getElementById('cot-num').value||'COT-XXX';
-  var cliente=document.getElementById('cot-cliente').value||'—';
-  var logo=typeof TYC_LOGO!=='undefined'?TYC_LOGO:'';
-  var firma=getFirmaDataUrl();
-  var tNeto=_lcItems.reduce(function(s,it){return s+it.qty*(it.costo||0);},0);
-  var lastSec='';
-  var rows=_lcItems.map(function(it,i){
-    var hdr='';
-    if(it.secLabel!==lastSec){lastSec=it.secLabel;hdr='<tr><td colspan="7" style="padding:6px 10px;background:'+it.secBg+';color:#fff;font-weight:700;font-size:11px">'+it.secLabel+'</td></tr>';}
-    var bg=it.comprado?'#F1F8E9':it.esExtra?'#FFF8E1':(i%2===0?'#fff':'#FAFAFA');
-    var xb=it.esExtra?'<span style="background:#854F0B;color:#fff;font-size:8px;padding:1px 4px;border-radius:3px;margin-left:3px">EXTRA</span>':'';
-    var ck=it.comprado?'<span style="color:#375623;font-weight:700;font-size:16px">✓</span>':'☐';
-    return hdr+'<tr style="background:'+bg+'">'
-      +'<td style="padding:8px 9px;border:1px solid #E0E0E0;font-size:11px;text-align:center;color:#888">'+(i+1)+'</td>'
-      +'<td style="padding:8px 9px;border:1px solid #E0E0E0;font-size:13px;font-weight:700">'+it.desc+xb+'</td>'
-      +'<td style="padding:8px 9px;border:1px solid #E0E0E0;font-size:12px;color:#444">'+(it.spec||'')+'</td>'
-      +'<td style="padding:8px 9px;border:1px solid #E0E0E0;font-size:12px;text-align:center">'+it.unit+'</td>'
-      +'<td style="padding:8px 9px;border:1px solid #E0E0E0;font-size:13px;font-weight:700;text-align:center;color:#1A5E20">'+it.qty+'</td>'
-      +'<td style="padding:8px 9px;border:1px solid #E0E0E0;font-size:12px;text-align:right">S/ '+fmtN(it.costo||0)+'</td>'
-      +'<td style="padding:8px 9px;border:1px solid #E0E0E0;font-size:12px;font-weight:700;text-align:right">S/ '+fmtN(it.qty*(it.costo||0))+'</td>'
-      +'</tr>';
+  if(!_lcItems || !_lcItems.length){ showNotif('No hay ítems en la lista','error'); return; }
+
+  var cotNum  = (document.getElementById('cot-num')  ||{}).value || 'COT-XXX-2026';
+  var cliente = (document.getElementById('cot-cliente')||{}).value || '—';
+  var lugar   = (document.getElementById('cot-lugar') ||{}).value || '—';
+  var descSvc = (document.getElementById('cot-desc')  ||{}).value || '—';
+  var fechaRaw= (document.getElementById('cot-fecha') ||{}).value || '';
+  var fecha   = fechaRaw
+    ? new Date(fechaRaw+'T12:00').toLocaleDateString('es-PE',{day:'2-digit',month:'long',year:'numeric'})
+    : new Date().toLocaleDateString('es-PE',{day:'2-digit',month:'long',year:'numeric'});
+  var logo    = (typeof TYC_LOGO !== 'undefined') ? TYC_LOGO : '';
+  var firma   = getFirmaDataUrl ? getFirmaDataUrl() : '';
+  var margin  = parseInt((document.getElementById('margin-slider')||{value:'25'}).value||25)/100;
+
+  var tNeto = _lcItems.reduce(function(s,it){ return s + (it.qty||1)*(it.costo||0); }, 0);
+  var igv   = tNeto * 0.18;
+  var total = tNeto + igv;
+
+  // Build rows grouped by section
+  var lastSec = '';
+  var rows = _lcItems.map(function(it, i){
+    var hdr = '';
+    if(it.secLabel !== lastSec){
+      lastSec = it.secLabel;
+      hdr = '<tr>'
+        + '<td colspan="7" style="padding:8px 12px;background:'+it.secBg
+        + ';color:#fff;font-weight:700;font-size:12px;letter-spacing:.3px">'
+        + it.secLabel + '</td></tr>';
+    }
+    var bg  = it.comprado ? '#F1F8E9' : it.esExtra ? '#FFF8E1' : (i%2===0 ? '#ffffff' : '#F8F9FA');
+    var sub = (it.qty||1)*(it.costo||0);
+    var xb  = it.esExtra
+      ? '<span style="background:#854F0B;color:#fff;font-size:8px;padding:2px 5px;border-radius:3px;margin-left:4px;font-weight:700">EXTRA</span>'
+      : '';
+    var ck  = it.comprado
+      ? '<span style="color:#375623;font-weight:800;font-size:16px">✓</span>'
+      : '<span style="color:#ccc">☐</span>';
+    return hdr
+      + '<tr style="background:'+bg+'">'
+      + '<td style="padding:9px 10px;border:1px solid #E8ECEF;font-size:11px;text-align:center;color:#999">'+(i+1)+'</td>'
+      + '<td style="padding:9px 12px;border:1px solid #E8ECEF;font-size:13px;font-weight:700;line-height:1.4">'+(it.desc||'')+xb+'</td>'
+      + '<td style="padding:9px 10px;border:1px solid #E8ECEF;font-size:12px;color:#444;line-height:1.4">'+(it.spec||'')+'</td>'
+      + '<td style="padding:9px 10px;border:1px solid #E8ECEF;font-size:12px;text-align:center;font-weight:600">'+(it.unit||'und')+'</td>'
+      + '<td style="padding:9px 10px;border:1px solid #E8ECEF;font-size:14px;font-weight:800;text-align:center;color:#1A5E20">'+(it.qty||1)+'</td>'
+      + '<td style="padding:9px 10px;border:1px solid #E8ECEF;font-size:12px;text-align:right">S/ '+fmtN(it.costo||0)+'</td>'
+      + '<td style="padding:9px 10px;border:1px solid #E8ECEF;font-size:13px;font-weight:700;text-align:right">S/ '+fmtN(sub)+'</td>'
+      + '</tr>';
   }).join('');
-  var win=window.open('','_blank','width=900,height=750,menubar=no,toolbar=no');
-  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Lista de Compras — '+cotNum+'</title>'
-    +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;padding:24px;font-size:13px}'
-    +'.np{padding:10px 14px;background:#f5f5f5;border-radius:8px;display:flex;gap:10px;margin-bottom:18px}'
-    +'table{width:100%;border-collapse:collapse}th{background:#1F3864;color:#fff;padding:8px 10px;text-align:left;font-size:11px}'
-    +'.tb{background:#1F3864;color:#fff;padding:11px 18px;border-radius:8px;display:flex;justify-content:space-between;margin:12px 0}'
-    +'@media print{.np{display:none}@page{size:A4;margin:10mm}}</style></head><body>'
-    +'<div class="np"><button onclick="window.print()" style="background:#375623;color:#fff;border:none;padding:8px 20px;border-radius:6px;cursor:pointer;font-weight:700">⬇ Guardar PDF</button>'
-    +'<button onclick="window.close()" style="background:#eee;border:1px solid #ccc;padding:8px 14px;border-radius:6px;cursor:pointer">✕</button></div>'
-    +'<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1F3864;padding-bottom:12px;margin-bottom:16px">'
-    +'<div style="display:flex;align-items:center;gap:14px">'+(logo?'<img src="'+logo+'" style="height:64px;object-fit:contain">':'')
-    +'<div><div style="font-size:14px;font-weight:700;color:#1F3864">TYC SERVICIOS Y MANTENIMIENTO GENERALES</div>'
-    +'<div style="font-size:11px;color:#555">RUC: 20614003546 · Tel: +51 943 435 224 · adm@tycsmg.com</div></div></div>'
-    +'<div style="text-align:right;font-size:11px;color:#555">'
+
+  var win = window.open('','_blank','width=960,height=800,menubar=no,toolbar=no');
+  if(!win){ showNotif('Permite ventanas emergentes para generar el PDF','error'); return; }
+
+  win.document.write('<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
+    +'<title>Lista de Compras \u2014 '+cotNum+'</title>'
+    +'<style>'
+    +'*{box-sizing:border-box;margin:0;padding:0}'
+    +'body{font-family:Arial,sans-serif;background:#fff;color:#111;padding:24px 28px;font-size:13px}'
+    +'.np{padding:10px 14px;background:#f5f5f5;border-radius:8px;display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap}'
+    +'.np button{padding:8px 20px;border:none;border-radius:6px;cursor:pointer;font-weight:700;font-size:13px}'
+    +'.hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #1F3864;padding-bottom:14px;margin-bottom:18px}'
+    +'.ttl{font-size:18px;font-weight:800;text-align:center;color:#1F3864;text-transform:uppercase;letter-spacing:1px;margin:14px 0 4px}'
+    +'.sub{text-align:center;font-size:12px;color:#666;margin-bottom:16px}'
+    +'.info{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px}'
+    +'.ic{border:1px solid #E0E0E0;border-radius:8px;padding:10px 14px}'
+    +'.il{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:#1F3864;font-weight:700;margin-bottom:4px}'
+    +'.iv{font-size:13px;font-weight:600}'
+    +'table{width:100%;border-collapse:collapse;margin-bottom:16px}'
+    +'th{padding:9px 11px;text-align:left;font-size:11px;font-weight:700;background:#1F3864;color:#fff}'
+    +'th.c{text-align:center} th.r{text-align:right}'
+    +'.tot{background:#1F3864;color:#fff;padding:12px 18px;border-radius:8px;display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:14px}'
+    +'.obs{border:1.5px dashed #ccc;border-radius:8px;padding:10px 14px;font-size:12px;color:#888;min-height:38px;margin-bottom:16px}'
+    +'.fg{display:grid;grid-template-columns:1fr 1fr;gap:50px;margin-top:28px}'
+    +'.fb{text-align:center}'
+    +'.fl{border-top:1.5px solid #333;margin:60px 12px 7px}'
+    +'@media print{.np{display:none}body{padding:12px 16px}@page{size:A4;margin:10mm}img{-webkit-print-color-adjust:exact;print-color-adjust:exact}}'
+    +'</style></head><body>'
+
+    // Toolbar
+    +'<div class="np">'
+    +'<button onclick="window.print()" style="background:#1F3864;color:#fff">\u2b07 Guardar PDF / Imprimir</button>'
+    +'<button onclick="window.close()" style="background:#eee;border:1px solid #ccc">\u00d7 Cerrar</button>'
+    +'<span style="font-size:11px;color:#777">Desactiva encabezados y pies de p\u00e1gina al guardar</span>'
+    +'</div>'
+
+    // Header
+    +'<div class="hdr">'
+    +'<div style="display:flex;align-items:center;gap:14px">'
+    +(logo?'<img src="'+logo+'" style="height:70px;object-fit:contain;border-right:2px solid #eee;padding-right:14px">':'')
+    +'<div>'
+    +'<div style="font-size:14px;font-weight:800;color:#1F3864">TYC SERVICIOS Y MANTENIMIENTO GENERALES S.R.L.</div>'
+    +'<div style="font-size:11px;color:#555;margin-top:2px">RUC: 20614003546 &nbsp;&middot;&nbsp; Tel: +51 943 435 224 &nbsp;&middot;&nbsp; adm@tycsmg.com</div>'
+    +'<div style="font-size:11px;color:#555">Calle Javier P\u00e9rez de Cuellar N\u00b008, A.H. San Francisco, Paita</div>'
+    +'</div></div>'
+    +'<div style="text-align:right;font-size:11px;color:#555;line-height:1.9">'
     +'<div style="font-size:15px;font-weight:800;color:#1F3864">'+cotNum+'</div>'
-    +'<div>Cliente: <strong>'+cliente+'</strong></div></div></div>'
-    +'<div style="font-size:17px;font-weight:800;text-align:center;margin-bottom:14px;text-transform:uppercase;color:#1F3864">🛒 Lista de Materiales para Compra</div>'
-    +'<table><thead><tr><th style="width:32px">#</th><th>Descripción</th><th style="width:150px">Especificación</th>'
-    +'<th style="width:50px;text-align:center">Und.</th><th style="width:56px;text-align:center">Cant.</th>'
-    +'<th style="width:88px;text-align:right">P.Unit.</th><th style="width:92px;text-align:right">Subtotal</th>'
-    +'</tr></thead><tbody>'+rows+'</tbody></table>'
-    +'<div class="tb"><span style="font-weight:700">Total Neto (sin IGV):</span><span>S/ '+fmtN(tNeto)+'</span>'
-    +'<span>+ IGV 18%: S/ '+fmtN(tNeto*.18)+'</span>'
-    +'<span style="font-size:16px;font-weight:800">TOTAL: S/ '+fmtN(tNeto*1.18)+'</span></div>'
+    +'<div>Fecha: <strong>'+fecha+'</strong></div>'
+    +'<div>Total \u00edtems: <strong>'+_lcItems.length+'</strong></div>'
+    +'</div></div>'
+
+    // Title
+    +'<div class="ttl">\ud83d\uded2 Lista de Materiales para Compra</div>'
+    +'<div class="sub">Uso interno &nbsp;\u00b7&nbsp; Referencia: '+cotNum+' &nbsp;\u00b7&nbsp; '+fecha+'</div>'
+
+    // Info
+    +'<div class="info">'
+    +'<div class="ic"><div class="il">Cliente</div><div class="iv">'+cliente+'</div></div>'
+    +'<div class="ic"><div class="il">Servicio</div><div class="iv">'+descSvc+'</div></div>'
+    +'<div class="ic"><div class="il">Ubicaci\u00f3n</div><div class="iv">'+lugar+'</div></div>'
+    +'</div>'
+
+    // Table
+    +'<table>'
+    +'<thead><tr>'
+    +'<th style="width:32px">#</th>'
+    +'<th>Descripci\u00f3n</th>'
+    +'<th style="min-width:140px">Especificaci\u00f3n</th>'
+    +'<th class="c" style="width:50px">Und.</th>'
+    +'<th class="c" style="width:58px">Cant.</th>'
+    +'<th class="r" style="width:90px">P. Unit.</th>'
+    +'<th class="r" style="width:96px">Subtotal</th>'
+    +'</tr></thead>'
+    +'<tbody>'+rows+'</tbody>'
+    +'</table>'
+
+    // Totals
+    +'<div class="tot">'
+    +'<div><div style="font-size:11px;opacity:.8">Total Neto (sin IGV)</div>'
+    +'<div style="font-size:18px;font-weight:800;font-family:monospace">S/ '+fmtN(tNeto)+'</div></div>'
+    +'<div><div style="font-size:11px;opacity:.8">IGV 18%</div>'
+    +'<div style="font-size:15px;font-weight:600;font-family:monospace">S/ '+fmtN(igv)+'</div></div>'
+    +'<div><div style="font-size:11px;opacity:.8">TOTAL CON IGV</div>'
+    +'<div style="font-size:22px;font-weight:800;font-family:monospace">S/ '+fmtN(total)+'</div></div>'
+    +'</div>'
+
+    // Obs
+    +'<div class="obs"><strong style="color:#444">Observaciones:</strong><br>'
+    +'___________________________________________________________________</div>'
+
+    // Signatures
+    +'<div class="fg">'
+    +'<div class="fb">'
+    +(firma?'<img src="'+firma+'" style="max-height:62px;max-width:180px;object-fit:contain;display:block;margin:0 auto">':'<div style="height:62px"></div>')
+    +'<div class="fl"></div>'
+    +'<div style="font-weight:700;font-size:12px">TYC SERVICIOS Y MANTENIMIENTO GENERALES S.R.L.</div>'
+    +'<div style="font-size:11px;color:#555">Jos\u00e9 Moncada Lluen &mdash; Gerente General</div>'
+    +'</div>'
+    +'<div class="fb"><div style="height:62px"></div>'
+    +'<div class="fl"></div>'
+    +'<div style="font-weight:700;font-size:12px">RESPONSABLE DE COMPRAS</div>'
+    +'<div style="font-size:11px;color:#555">Firma / Nombre / Fecha</div>'
+    +'</div></div>'
     +'</body></html>');
   win.document.close();
 }
 
-// ── Generar PDF para proveedor (SIN precios, con campos a llenar) ─────────────
 function _lcPDFProveedor(){
   if(!_lcItems.length){showNotif('Lista vacía','error');return;}
   var cotNum   = document.getElementById('cot-num').value||'COT-XXX-2026';
