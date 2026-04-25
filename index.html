@@ -3788,54 +3788,145 @@ function _lcRender(){
   var tbody = document.getElementById('lc-tbody');
   var badge = document.getElementById('lc-badge');
   if(!tbody) return;
-  var total = _lcItems.reduce(function(s,it){return s+it.qty*(it.costo||0);},0);
-  if(badge) badge.textContent = _lcItems.length+' ítems · S/ '+fmtN(total);
-  // Also update legacy badge id
-  var badge2=document.getElementById('lc-count-badge');
-  if(badge2) badge2.textContent = _lcItems.length+' ítems';
-  var lastSec='';
-  tbody.innerHTML = _lcItems.map(function(it,i){
-    var bg = it.comprado?'#F1F8E9':it.esExtra?'#FFF8E1':(i%2===0?'#fff':'#FAFAFA');
-    var hdr='';
-    if(it.secLabel!==lastSec){
-      lastSec=it.secLabel;
-      hdr='<tr><td colspan="8" style="padding:5px 10px;background:'+it.secBg+';color:#fff;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.5px">'+it.secLabel+(it.esExtra?' <span style="background:rgba(255,255,255,.25);padding:1px 4px;border-radius:3px;font-size:9px">EXTRA</span>':'')+'</td></tr>';
+
+  var total = _lcItems.reduce(function(s,it){ return s + it.qty*(it.costo||0); }, 0);
+  if(badge) badge.textContent = _lcItems.length + ' ítems · S/ ' + fmtN(total);
+
+  // Clear and rebuild using DOM (not innerHTML strings — avoids cursor/input issues)
+  tbody.innerHTML = '';
+  var lastSec = '';
+
+  _lcItems.forEach(function(it, i){
+    // Section header row
+    if(it.secLabel !== lastSec){
+      lastSec = it.secLabel;
+      var hdrTr = document.createElement('tr');
+      var hdrTd = document.createElement('td');
+      hdrTd.colSpan = 8;
+      hdrTd.style.cssText = 'padding:5px 10px;background:'+it.secBg+';color:#fff;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.5px';
+      hdrTd.textContent = it.secLabel;
+      hdrTr.appendChild(hdrTd);
+      tbody.appendChild(hdrTr);
     }
-    var xb=it.esExtra?'<span style="background:#854F0B;color:#fff;font-size:8px;padding:1px 4px;border-radius:3px;margin-left:3px;font-weight:700">EXTRA</span>':'';
-    var sub=it.qty*(it.costo||0);
-    return hdr+
-      '<tr style="background:'+bg+';'+(it.comprado?'opacity:.6;':'')+'" id="lcr-'+i+'">'
-      +'<td style="padding:5px 7px;border:1px solid #E5E7EB;text-align:center"><input type="checkbox"'+(it.comprado?' checked':'')
-        +' onchange="_lcToggle('+i+',this.checked)" style="width:15px;height:15px;cursor:pointer"></td>'
-      +'<td style="padding:5px 8px;border:1px solid #E5E7EB">'
-        +(it.esExtra
-          ?'<input type="text" value="'+it.desc.replace(/"/g,'&quot;')+'" oninput="_lcEdit('+i+',\'desc\',this.value)" style="width:100%;padding:3px 6px;border:1px solid #ddd;border-radius:4px;font-size:12px;font-weight:600;background:#FFFDE7">'
-          :'<span style="font-size:12px;font-weight:600">'+it.desc+'</span>')+xb
-      +'</td>'
-      +'<td style="padding:5px 8px;border:1px solid #E5E7EB">'
-        +(it.esExtra
-          ?'<input type="text" value="'+(it.spec||'').replace(/"/g,'&quot;')+'" oninput="_lcEdit('+i+',\'spec\',this.value)" style="width:100%;padding:3px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px;background:#FFFDE7">'
-          :'<span style="font-size:11px;color:#666">'+(it.spec||'')+'</span>')
-      +'</td>'
-      +'<td style="padding:5px 7px;border:1px solid #E5E7EB;text-align:center">'
-        +(it.esExtra
-          ?'<input type="text" value="'+it.unit+'" oninput="_lcEdit('+i+',\'unit\',this.value)" style="width:46px;padding:3px 5px;border:1px solid #ddd;border-radius:4px;font-size:12px;text-align:center;background:#FFFDE7">'
-          :'<span style="font-size:12px">'+it.unit+'</span>')
-      +'</td>'
-      +'<td style="padding:5px 7px;border:1px solid #E5E7EB;text-align:center">'
-        +'<input type="number" value="'+it.qty+'" min="0.01" step="any" oninput="_lcEdit('+i+',\'qty\',parseFloat(this.value)||1);_lcRender()" '
-        +'style="width:60px;padding:3px 6px;border:1.5px solid '+(it.esExtra?'#854F0B':'#375623')+';border-radius:4px;font-size:13px;font-weight:700;text-align:center;background:'+(it.esExtra?'#FFF3E0':'#E8F5E9')+'">'
-      +'</td>'
-      +'<td style="padding:5px 7px;border:1px solid #E5E7EB;text-align:right">'
-        +'<input type="number" value="'+(it.costo||0).toFixed(2)+'" min="0" step="any" oninput="_lcEdit('+i+',\'costo\',parseFloat(this.value)||0);_lcRender()" '
-        +'style="width:76px;padding:3px 6px;border:1.5px solid #1F3864;border-radius:4px;font-size:12px;text-align:right;background:#EEF2FF">'
-      +'</td>'
-      +'<td style="padding:5px 7px;border:1px solid #E5E7EB;text-align:right;font-weight:700;font-size:12px;white-space:nowrap">S/ '+fmtN(sub)+'</td>'
-      +'<td style="padding:5px 7px;border:1px solid #E5E7EB;text-align:center">'
-        +'<button onclick="_lcDel('+i+')" style="background:none;border:none;color:'+(it.esExtra?'#A32D2D':'#bbb')+';cursor:pointer;font-size:14px;padding:1px 4px">✕</button>'
-      +'</td>'
-      +'</tr>';
-  }).join('');
+
+    var bg  = it.comprado ? '#F1F8E9' : it.esExtra ? '#FFF8E1' : (i%2===0 ? '#fff' : '#FAFAFA');
+    var sub = it.qty * (it.costo||0);
+    var tr  = document.createElement('tr');
+    tr.style.background = bg;
+    if(it.comprado) tr.style.opacity = '.6';
+
+    // ── Col 0: Checkbox ──────────────────────────────────────────────
+    var td0 = document.createElement('td');
+    td0.style.cssText = 'padding:5px 7px;border:1px solid #E5E7EB;text-align:center';
+    var chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.checked = it.comprado;
+    chk.style.cssText = 'width:15px;height:15px;cursor:pointer';
+    (function(idx){ chk.addEventListener('change', function(){ _lcToggle(idx, this.checked); }); })(i);
+    td0.appendChild(chk);
+
+    // ── Col 1: Descripción ───────────────────────────────────────────
+    var td1 = document.createElement('td');
+    td1.style.cssText = 'padding:5px 8px;border:1px solid #E5E7EB';
+    if(it.esExtra){
+      var inp1 = document.createElement('input');
+      inp1.type = 'text'; inp1.value = it.desc;
+      inp1.style.cssText = 'width:100%;padding:3px 6px;border:1px solid #ddd;border-radius:4px;font-size:12px;font-weight:600;background:#FFFDE7';
+      (function(idx){ inp1.addEventListener('input', function(){ _lcEdit(idx,'desc',this.value); }); })(i);
+      td1.appendChild(inp1);
+      var xb = document.createElement('span');
+      xb.textContent='EXTRA'; xb.style.cssText='background:#854F0B;color:#fff;font-size:8px;padding:1px 4px;border-radius:3px;margin-left:3px;font-weight:700;vertical-align:middle';
+      td1.appendChild(xb);
+    } else {
+      var sp1 = document.createElement('span');
+      sp1.style.cssText = 'font-size:12px;font-weight:600'; sp1.textContent = it.desc;
+      td1.appendChild(sp1);
+    }
+
+    // ── Col 2: Especificación ────────────────────────────────────────
+    var td2 = document.createElement('td');
+    td2.style.cssText = 'padding:5px 8px;border:1px solid #E5E7EB';
+    if(it.esExtra){
+      var inp2 = document.createElement('input');
+      inp2.type='text'; inp2.value=it.spec||'';
+      inp2.style.cssText='width:100%;padding:3px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px;background:#FFFDE7';
+      (function(idx){ inp2.addEventListener('input', function(){ _lcEdit(idx,'spec',this.value); }); })(i);
+      td2.appendChild(inp2);
+    } else {
+      var sp2 = document.createElement('span');
+      sp2.style.cssText='font-size:11px;color:#666'; sp2.textContent=it.spec||'';
+      td2.appendChild(sp2);
+    }
+
+    // ── Col 3: Unidad ────────────────────────────────────────────────
+    var td3 = document.createElement('td');
+    td3.style.cssText = 'padding:5px 7px;border:1px solid #E5E7EB;text-align:center';
+    if(it.esExtra){
+      var inp3 = document.createElement('input');
+      inp3.type='text'; inp3.value=it.unit||'und';
+      inp3.style.cssText='width:46px;padding:3px 5px;border:1px solid #ddd;border-radius:4px;font-size:12px;text-align:center;background:#FFFDE7';
+      (function(idx){ inp3.addEventListener('input', function(){ _lcEdit(idx,'unit',this.value); }); })(i);
+      td3.appendChild(inp3);
+    } else {
+      var sp3 = document.createElement('span');
+      sp3.style.cssText='font-size:12px'; sp3.textContent=it.unit||'und';
+      td3.appendChild(sp3);
+    }
+
+    // ── Col 4: Cantidad (always editable) ────────────────────────────
+    var td4 = document.createElement('td');
+    td4.style.cssText = 'padding:5px 7px;border:1px solid #E5E7EB;text-align:center';
+    var inpQ = document.createElement('input');
+    inpQ.type='number'; inpQ.value=it.qty; inpQ.min='0.01'; inpQ.step='any';
+    inpQ.style.cssText='width:60px;padding:3px 6px;border:1.5px solid '+(it.esExtra?'#854F0B':'#375623')+';border-radius:4px;font-size:13px;font-weight:700;text-align:center;background:'+(it.esExtra?'#FFF3E0':'#E8F5E9');
+    (function(idx, badge_el){
+      inpQ.addEventListener('change', function(){
+        _lcEdit(idx,'qty',parseFloat(this.value)||1);
+        // Update just the subtotal cell without re-rendering all
+        var subCell = document.getElementById('lc-sub-'+idx);
+        if(subCell) subCell.textContent = 'S/ '+fmtN(_lcItems[idx].qty*(_lcItems[idx].costo||0));
+        var tot2 = _lcItems.reduce(function(s,it2){ return s+it2.qty*(it2.costo||0); },0);
+        if(badge_el) badge_el.textContent = _lcItems.length+' ítems · S/ '+fmtN(tot2);
+      });
+    })(i, badge);
+    td4.appendChild(inpQ);
+
+    // ── Col 5: Precio unitario (always editable) ─────────────────────
+    var td5 = document.createElement('td');
+    td5.style.cssText = 'padding:5px 7px;border:1px solid #E5E7EB;text-align:right';
+    var inpC = document.createElement('input');
+    inpC.type='number'; inpC.value=(it.costo||0).toFixed(2); inpC.min='0'; inpC.step='any';
+    inpC.style.cssText='width:76px;padding:3px 6px;border:1.5px solid #1F3864;border-radius:4px;font-size:12px;text-align:right;background:#EEF2FF';
+    (function(idx, badge_el){
+      inpC.addEventListener('change', function(){
+        _lcEdit(idx,'costo',parseFloat(this.value)||0);
+        var subCell = document.getElementById('lc-sub-'+idx);
+        if(subCell) subCell.textContent = 'S/ '+fmtN(_lcItems[idx].qty*(_lcItems[idx].costo||0));
+        var tot2 = _lcItems.reduce(function(s,it2){ return s+it2.qty*(it2.costo||0); },0);
+        if(badge_el) badge_el.textContent = _lcItems.length+' ítems · S/ '+fmtN(tot2);
+      });
+    })(i, badge);
+    td5.appendChild(inpC);
+
+    // ── Col 6: Subtotal ──────────────────────────────────────────────
+    var td6 = document.createElement('td');
+    td6.id = 'lc-sub-'+i;
+    td6.style.cssText = 'padding:5px 7px;border:1px solid #E5E7EB;text-align:right;font-weight:700;font-size:12px;white-space:nowrap';
+    td6.textContent = 'S/ '+fmtN(sub);
+
+    // ── Col 7: Eliminar ──────────────────────────────────────────────
+    var td7 = document.createElement('td');
+    td7.style.cssText = 'padding:5px 7px;border:1px solid #E5E7EB;text-align:center';
+    var delBtn = document.createElement('button');
+    delBtn.textContent = '✕';
+    delBtn.style.cssText = 'background:none;border:none;color:'+(it.esExtra?'#A32D2D':'#ccc')+';cursor:pointer;font-size:14px;padding:1px 4px';
+    (function(idx){ delBtn.addEventListener('click', function(){ _lcDel(idx); }); })(i);
+    td7.appendChild(delBtn);
+
+    tr.appendChild(td0); tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
+    tr.appendChild(td4); tr.appendChild(td5); tr.appendChild(td6); tr.appendChild(td7);
+    tbody.appendChild(tr);
+  });
 }
 
 function _lcEdit(i,f,v){ if(_lcItems[i]) _lcItems[i][f]=v; }
@@ -4159,13 +4250,7 @@ function _lcPDFProveedor(){
   closeModal('modal-lista-mat');
 }
 
-function lcRenderTabla(){
-  // Sync: if listaCompraItems has data, merge to _lcItems
-  if(listaCompraItems.length && !_lcItems.length){
-    _lcItems = listaCompraItems;
-  }
-  _lcRender();
-}
+function lcRenderTabla(){ _lcRender(); }
 
 function lcEdit(i,f,v){ if(_lcItems[i]) _lcItems[i][f]=v; }
 function lcEliminar(i){ _lcItems.splice(i,1); lcRenderTabla(); }
