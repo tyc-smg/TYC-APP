@@ -666,13 +666,42 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
 
       <!-- Add item buttons -->
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;padding:14px 16px;background:var(--surface2);border-radius:8px;border:1px dashed var(--border)">
-        <span style="font-size:11px;color:var(--text2);font-weight:600;align-self:center;text-transform:uppercase;letter-spacing:.5px;margin-right:4px">+ Agregar ítem:</span>
-        <button class="btn btn-sm" onclick="addCotItem(0)" style="background:#1F3864;color:#fff;border:none">① Mano de Obra</button>
-        <button class="btn btn-sm" onclick="addCotItem(1)" style="background:#854F0B;color:#fff;border:none">② Diarias</button>
-        <button class="btn btn-sm" onclick="addCotItem(2)" style="background:#375623;color:#fff;border:none">③ Material</button>
-        <button class="btn btn-sm" onclick="addCotItem(3)" style="background:#634B09;color:#fff;border:none">④ Herramienta</button>
-        <button class="btn btn-sm" onclick="addCotItem(4)" style="background:#555555;color:#fff;border:none">⑤ Costo</button>
-        <button class="btn btn-sm" onclick="addCotItem(5)" style="background:#A32D2D;color:#fff;border:none">🛡 Seguridad/HSE</button>
+        <span style="font-size:11px;color:var(--text2);font-weight:600;align-self:center;text-transform:uppercase;letter-spacing:.5px;margin-right:4px">+ Agregar:</span>
+        <!-- Botón: desde lista de materiales -->
+        <div style="position:relative;display:inline-block">
+          <button class="btn btn-sm" onclick="abrirPickerMaterial(event)" style="background:var(--accent2);color:#fff;border:none;gap:4px">
+            <span>📦</span> De lista
+          </button>
+          <div id="picker-material" style="display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:1000;background:var(--surface);border:1px solid var(--border2);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.2);width:340px;padding:10px">
+            <div style="margin-bottom:8px">
+              <input type="text" id="picker-search" placeholder="🔍 Buscar en catálogo..." oninput="filtrarPickerMaterial(this.value)"
+                style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--yellow)">
+            </div>
+            <div style="margin-bottom:6px">
+              <select id="picker-sec" onchange="filtrarPickerMaterial(document.getElementById('picker-search').value)"
+                style="width:100%;padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:11px">
+                <option value="">Todas las secciones</option>
+                <option value="0" style="background:#1F3864;color:#fff">① Mano de Obra</option>
+                <option value="1" style="background:#854F0B;color:#fff">② Diarias</option>
+                <option value="2" style="background:#375623;color:#fff">③ Materiales</option>
+                <option value="3" style="background:#634B09;color:#fff">④ Herramientas</option>
+                <option value="4" style="background:#555555;color:#fff">⑤ Costos Admin.</option>
+                <option value="5" style="background:#A32D2D;color:#fff">⑥ HSE</option>
+              </select>
+            </div>
+            <div id="picker-results" style="max-height:240px;overflow-y:auto;display:flex;flex-direction:column;gap:2px"></div>
+            <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border2);font-size:10px;color:var(--text3);text-align:center">
+              Click en un ítem para agregar · <a href="#" onclick="cerrarPickerMaterial();return false" style="color:var(--accent2)">Cerrar</a>
+            </div>
+          </div>
+        </div>
+        <!-- Botones manual por sección -->
+        <button class="btn btn-sm" onclick="addCotItem(0)" style="background:#1F3864;color:#fff;border:none" title="Agregar fila vacía">① MO</button>
+        <button class="btn btn-sm" onclick="addCotItem(1)" style="background:#854F0B;color:#fff;border:none" title="Agregar fila vacía">② Diarias</button>
+        <button class="btn btn-sm" onclick="addCotItem(2)" style="background:#375623;color:#fff;border:none" title="Agregar fila vacía">③ Mat.</button>
+        <button class="btn btn-sm" onclick="addCotItem(3)" style="background:#634B09;color:#fff;border:none" title="Agregar fila vacía">④ Herr.</button>
+        <button class="btn btn-sm" onclick="addCotItem(4)" style="background:#555555;color:#fff;border:none" title="Agregar fila vacía">⑤ Costo</button>
+        <button class="btn btn-sm" onclick="addCotItem(5)" style="background:#A32D2D;color:#fff;border:none" title="Agregar fila vacía">⑥ HSE</button>
       </div>
 
       <!-- RELATORIO DE VISITA TÉCNICA -->
@@ -3414,6 +3443,100 @@ function guardarCotizacion(){
 }
 
 
+// ─── PICKER DE MATERIALES DEL CATÁLOGO ──────────────────────────────────────
+function abrirPickerMaterial(e){
+  e.stopPropagation();
+  const picker = document.getElementById('picker-material');
+  if(!picker) return;
+  const isOpen = picker.style.display === 'block';
+  cerrarPickerMaterial();
+  if(isOpen) return;
+  picker.style.display = 'block';
+  filtrarPickerMaterial('');
+  setTimeout(function(){ document.getElementById('picker-search').focus(); }, 50);
+  // Close when clicking outside
+  setTimeout(function(){
+    document.addEventListener('click', cerrarPickerClickFuera, {once:true});
+  }, 10);
+}
+
+function cerrarPickerClickFuera(e){
+  const picker = document.getElementById('picker-material');
+  if(picker && !picker.contains(e.target)) cerrarPickerMaterial();
+}
+
+function cerrarPickerMaterial(){
+  const picker = document.getElementById('picker-material');
+  if(picker) picker.style.display = 'none';
+}
+
+function filtrarPickerMaterial(query){
+  const q    = (query||'').toLowerCase().trim();
+  const secF = document.getElementById('picker-sec').value;
+  const res  = document.getElementById('picker-results');
+  if(!res) return;
+
+  // Map GRUPO_COT categories to section indices (0-5)
+  const CAT_TO_SEC = {};
+  if(typeof GRUPO_COT !== 'undefined'){
+    Object.entries(GRUPO_COT).forEach(function(e){ CAT_TO_SEC[e[0]] = e[1]; });
+  }
+
+  // Filter productos
+  let items = productos.filter(function(p){
+    const matchQ   = !q || p.name.toLowerCase().includes(q) || (p.cat||'').toLowerCase().includes(q) || (p.spec||'').toLowerCase().includes(q);
+    const sec      = CAT_TO_SEC[p.cat];
+    const matchSec = secF==='' || String(sec)===secF;
+    return matchQ && matchSec;
+  });
+
+  const SEC_COLORS = ['#1F3864','#854F0B','#375623','#634B09','#555555','#A32D2D'];
+  const SEC_NAMES  = ['MO','Diarias','Mat.','Herr.','Admin.','HSE'];
+
+  if(!items.length){
+    res.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text3);font-size:12px">Sin resultados</div>';
+    return;
+  }
+
+  res.innerHTML = items.slice(0,60).map(function(p){
+    const sec = CAT_TO_SEC[p.cat];
+    const secColor = typeof sec!=='undefined' ? SEC_COLORS[sec] : '#888';
+    const secName  = typeof sec!=='undefined' ? SEC_NAMES[sec]  : '?';
+    const precio   = p.priceSin ? ' · S/ '+fmtN(p.priceSin) : '';
+    const _el = document.createElement('div');
+    _el.style.cssText = 'padding:7px 10px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:12px';
+    _el.addEventListener('mouseover',function(){ this.style.background='var(--surface2)'; });
+    _el.addEventListener('mouseout', function(){ this.style.background=''; });
+    (function(_p,_s){ _el.addEventListener('click',function(){ insertarDesdePickerMaterial(_p.name,_p.spec||'',_p.unit||'und',1,_p.priceSin||0,typeof _s!=='undefined'?_s:2); }); })(p,sec);
+    _el.innerHTML = '<span style="background:'+secColor+';color:#fff;font-size:9px;padding:1px 5px;border-radius:3px;flex-shrink:0;font-weight:700">'+secName+'</span>'
+      +'<span style="flex:1;font-weight:600">'+p.name+'</span>'
+      +'<span style="font-size:10px;opacity:.6">'+precio+'</span>';
+    return _el.outerHTML;
+  }).join('');
+}
+
+function insertarDesdePickerMaterial(desc, spec, unit, qty, costo, secIdx){
+  if(secIdx < 0 || secIdx > 5) secIdx = 2;
+  COT_SECTIONS[secIdx].items.push({
+    desc:   desc,
+    spec:   spec,
+    unit:   unit,
+    qty:    qty,
+    costo:  costo,
+    margin: null,
+    _pi:    ''
+  });
+  renderCotizacion();
+  cerrarPickerMaterial();
+  showNotif('"'+desc+'" agregado a '+['MO','Diarias','Materiales','Herramientas','Admin.','HSE'][secIdx]);
+  // Scroll to section
+  setTimeout(function(){
+    const s = document.getElementById('cot-sections');
+    if(s) s.scrollIntoView({behavior:'smooth',block:'end'});
+  }, 150);
+}
+
+
 function renderPreview(){
   try {
   const margin = parseInt(document.getElementById('margin-slider').value)/100;
@@ -3621,7 +3744,7 @@ function renderPreview(){
       </div>
     </div>
 
-    ${allRows ? '<table class="print-table"><thead><tr><th>Descripción</th><th>Especificación</th><th>Und.</th><th>Cant.</th><th>P. Venta S/</th><th>Subtotal S/</th></tr></thead><tbody>'+allRows+'</tbody></table>' : '<div class="empty-state" style="padding:24px;text-align:center;color:var(--text3)">No hay ítems en la cotización</div>'}
+    ${allRows ? '<div style="overflow-x:auto;overflow-y:auto;max-height:420px;border-radius:8px;border:1px solid var(--border2)"><table class="print-table" style="min-width:600px"><thead style="position:sticky;top:0;z-index:2"><tr style="background:var(--accent)"><th style="color:#fff;padding:8px 10px">Descripción</th><th style="color:#fff;padding:8px 10px">Especificación</th><th style="color:#fff;padding:8px 10px;text-align:center">Und.</th><th style="color:#fff;padding:8px 10px;text-align:center">Cant.</th><th style="color:#fff;padding:8px 10px;text-align:right">P. Venta S/</th><th style="color:#fff;padding:8px 10px;text-align:right">Subtotal S/</th></tr></thead><tbody>'+allRows+'</tbody></table></div>' : '<div class="empty-state" style="padding:24px;text-align:center;color:var(--text3)">No hay ítems en la cotización</div>'}
 
     <div class="print-total-block">
       <div class="print-totals">
