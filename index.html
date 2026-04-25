@@ -943,9 +943,7 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
         </div>
         <div style="margin-top:16px;display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-gold" style="width:100%;justify-content:center" onclick="switchPage('preview')">◈ Ver cotización</button>
-          <button class="btn btn-primary" onclick="guardarCotizacion()" style="background:var(--green);border-color:var(--green);gap:6px;font-weight:600">
-              <span style="font-size:14px">💾</span> Guardar Cotización
-            </button>
+          
             <button class="btn btn-primary" onclick="guardarCotizacion()" style="background:var(--green);border-color:var(--green);font-weight:600;gap:5px"><span style="font-size:14px">💾</span> Guardar Cotización</button>
             <button class="btn" style="width:100%;justify-content:center;background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.2)" onclick="limpiarCotizacion()">✕ Nueva cotización</button>
         </div>
@@ -993,7 +991,6 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
     <!-- generated -->
   </div>
 </div>
-
 
 <!-- ═══════════════ PAGE: PROYECTO ═══════════════ -->
 <div class="page" id="page-proyecto">
@@ -3357,7 +3354,6 @@ function guardarCotizacion(){
   document.getElementById('cot-num').value = cotNum;
 }
 
-
 // ─── PICKER MATERIALES EN COTIZACIÓN ─────────────────────────────────────────
 function togglePickerMat(e){
   e.stopPropagation();
@@ -3788,6 +3784,9 @@ function _lcRender(){
   if(!tbody) return;
   var total = _lcItems.reduce(function(s,it){return s+it.qty*(it.costo||0);},0);
   if(badge) badge.textContent = _lcItems.length+' ítems · S/ '+fmtN(total);
+  // Also update legacy badge id
+  var badge2=document.getElementById('lc-count-badge');
+  if(badge2) badge2.textContent = _lcItems.length+' ítems';
   var lastSec='';
   tbody.innerHTML = _lcItems.map(function(it,i){
     var bg = it.comprado?'#F1F8E9':it.esExtra?'#FFF8E1':(i%2===0?'#fff':'#FAFAFA');
@@ -4155,52 +4154,17 @@ function _lcPDFProveedor(){
 }
 
 function lcRenderTabla(){
-  var tbody = document.getElementById('lc-tbody');
-  var badge = document.getElementById('lc-count-badge');
-  if(!tbody) return;
-  var total = listaCompraItems.reduce(function(s,it){return s+it.qty*it.costo;},0);
-  if(badge) badge.textContent = listaCompraItems.length+' ítems · S/ '+fmtN(total);
-  var lastSec = '';
-  tbody.innerHTML = listaCompraItems.map(function(it,i){
-    var rowBg = it.comprado ? '#F1F8E9' : it.esExtra ? '#FFF8E1' : (i%2===0?'#fff':'#FAFAFA');
-    var secHdr = '';
-    if(it.secLabel !== lastSec){
-      lastSec = it.secLabel;
-      secHdr = '<tr><td colspan="9" style="padding:6px 10px;background:'+it.secBg+';color:#fff;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.5px;border:1px solid '+it.secBg+'">'+it.secLabel+'</td></tr>';
-    }
-    var xb = it.esExtra ? '<span style="background:#854F0B;color:#fff;font-size:8px;padding:1px 4px;border-radius:3px;font-weight:700;margin-left:4px">EXTRA</span>' : '';
-    var sub = it.qty*it.costo;
-    return secHdr
-      +'<tr style="background:'+rowBg+';'+(it.comprado?'opacity:.6;text-decoration:line-through':'')+'">'
-      +'<td style="padding:6px 7px;border:1px solid #E5E7EB;text-align:center"><input type="checkbox" '+(it.comprado?'checked':'')+' onchange="lcToggleComprado('+i+',this.checked)" style="width:15px;height:15px;cursor:pointer"></td>'
-      +'<td style="padding:5px 8px;border:1px solid #E5E7EB">'
-        +(it.esExtra
-          ? '<input type="text" value="'+it.desc.replace(/"/g,'&quot;')+'" oninput="lcEdit('+i+',\'desc\',this.value)" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:12px;font-weight:600;background:#FFFDE7">'
-          : '<span style="font-size:12px;font-weight:600">'+it.desc+'</span>')+xb
-      +'</td>'
-      +'<td style="padding:5px 8px;border:1px solid #E5E7EB">'
-        +(it.esExtra
-          ? '<input type="text" value="'+it.spec.replace(/"/g,'&quot;')+'" oninput="lcEdit('+i+',\'spec\',this.value)" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px;background:#FFFDE7">'
-          : '<span style="font-size:11px;color:#666">'+it.spec+'</span>')
-      +'</td>'
-      +'<td style="padding:5px 7px;border:1px solid #E5E7EB;text-align:center">'
-        +(it.esExtra
-          ? '<input type="text" value="'+it.unit+'" oninput="lcEdit('+i+',\'unit\',this.value)" style="width:48px;padding:4px 5px;border:1px solid #ddd;border-radius:4px;font-size:12px;text-align:center;background:#FFFDE7">'
-          : '<span style="font-size:12px">'+it.unit+'</span>')
-      +'</td>'
-      +'<td style="padding:5px 7px;border:1px solid #E5E7EB;text-align:center"><input type="number" value="'+it.qty+'" min="0.01" step="any" oninput="lcEdit('+i+',\'qty\',parseFloat(this.value)||1);lcRenderTabla()" style="width:60px;padding:4px 6px;border:1.5px solid '+(it.esExtra?'#854F0B':'#375623')+';border-radius:4px;font-size:13px;font-weight:700;text-align:center;background:'+(it.esExtra?'#FFF3E0':'#E8F5E9')+'"></td>'
-      +'<td style="padding:5px 7px;border:1px solid #E5E7EB;text-align:right"><input type="number" value="'+it.costo.toFixed(2)+'" min="0" step="any" oninput="lcEdit('+i+',\'costo\',parseFloat(this.value)||0);lcRenderTabla()" style="width:76px;padding:4px 6px;border:1.5px solid #1F3864;border-radius:4px;font-size:12px;text-align:right;background:#EEF2FF"></td>'
-      +'<td style="padding:5px 8px;border:1px solid #E5E7EB;text-align:right;font-weight:700;font-size:12px;white-space:nowrap">S/ '+fmtN(sub)+'</td>'
-      +'<td style="padding:5px 7px;border:1px solid #E5E7EB"><input type="text" value="'+it.obs.replace(/"/g,'&quot;')+'" placeholder="obs..." oninput="lcEdit('+i+',\'obs\',this.value)" style="width:100%;padding:4px 6px;border:1px solid #ddd;border-radius:4px;font-size:11px"></td>'
-      +'<td style="padding:5px 7px;border:1px solid #E5E7EB;text-align:center"><button onclick="lcEliminar('+i+')" style="background:none;border:none;color:'+(it.esExtra?'#A32D2D':'#ccc')+';cursor:pointer;font-size:13px">✕</button></td>'
-      +'</tr>';
-  }).join('');
+  // Sync: if listaCompraItems has data, merge to _lcItems
+  if(listaCompraItems.length && !_lcItems.length){
+    _lcItems = listaCompraItems;
+  }
+  _lcRender();
 }
 
-function lcEdit(i,f,v){ if(listaCompraItems[i]) listaCompraItems[i][f]=v; }
-function lcEliminar(i){ listaCompraItems.splice(i,1); lcRenderTabla(); }
-function lcToggleComprado(i,v){ if(listaCompraItems[i]) listaCompraItems[i].comprado=v; lcRenderTabla(); }
-function lcLimpiarExtras(){ listaCompraItems=listaCompraItems.filter(function(it){return !it.esExtra;}); lcRenderTabla(); }
+function lcEdit(i,f,v){ if(_lcItems[i]) _lcItems[i][f]=v; }
+function lcEliminar(i){ _lcItems.splice(i,1); lcRenderTabla(); }
+function lcToggleComprado(i,v){ if(_lcItems[i]) _lcItems[i].comprado=v; lcRenderTabla(); }
+function lcLimpiarExtras(){ _lcItems=_lcItems.filter(function(it){return !it.esExtra;}); lcRenderTabla(); }
 
 function lcAgregarExtra(){
   var desc = (document.getElementById('lc-extra-desc').value||'').trim();
@@ -4211,7 +4175,7 @@ function lcAgregarExtra(){
   var sec  = document.getElementById('lc-extra-sec').value||'Materiales e Insumos';
   var bgs  = {'Mano de Obra / Personal':'#1F3864','Viáticos y Movilidad':'#854F0B','Materiales e Insumos':'#375623','Herramientas y Equipos':'#634B09','Costos Administrativos':'#555555','Seguridad / HSE':'#A32D2D'};
   if(!desc){ showNotif('Ingresa descripción','error'); return; }
-  listaCompraItems.push({secLabel:sec,secBg:bgs[sec]||'#555',desc:desc,spec:spec,unit:unit,qty:qty,costo:cost,esExtra:true,comprado:false,obs:''});
+  _lcItems.push({secLabel:sec,secBg:bgs[sec]||'#555',desc:desc,spec:spec,unit:unit,qty:qty,costo:cost,esExtra:true,comprado:false,obs:''});
   ['lc-extra-desc','lc-extra-spec'].forEach(function(id){document.getElementById(id).value='';});
   document.getElementById('lc-extra-unit').value='und';
   document.getElementById('lc-extra-qty').value='1';
@@ -4221,7 +4185,7 @@ function lcAgregarExtra(){
 }
 
 function lcGenerarPDF(){
-  if(!listaCompraItems.length){ showNotif('Lista vacía','error'); return; }
+  if(!_lcItems.length){ showNotif('Lista vacía','error'); return; }
   var cotNum  = document.getElementById('cot-num').value||'COT-XXX-2026';
   var cliente = document.getElementById('cot-cliente').value||'—';
   var lugar   = document.getElementById('cot-lugar').value||'—';
@@ -4230,10 +4194,10 @@ function lcGenerarPDF(){
   var fechaFmt= fechaRaw ? new Date(fechaRaw+'T12:00').toLocaleDateString('es-PE',{day:'2-digit',month:'long',year:'numeric'}) : new Date().toLocaleDateString('es-PE',{day:'2-digit',month:'long',year:'numeric'});
   var logo    = typeof TYC_LOGO!=='undefined'?TYC_LOGO:'';
   var firma   = getFirmaDataUrl();
-  var tNeto   = listaCompraItems.reduce(function(s,it){return s+it.qty*it.costo;},0);
+  var tNeto   = _lcItems.reduce(function(s,it){return s+it.qty*it.costo;},0);
   var igv=tNeto*0.18, tTotal=tNeto+igv;
   var lastSec2='';
-  var rows = listaCompraItems.map(function(it,i){
+  var rows = _lcItems.map(function(it,i){
     var bg = it.comprado?'#F1F8E9':it.esExtra?'#FFF8E1':(i%2===0?'#fff':'#FAFAFA');
     var hdr2='';
     if(it.secLabel!==lastSec2){lastSec2=it.secLabel;hdr2='<tr><td colspan="8" style="padding:7px 10px;background:'+it.secBg+';color:#fff;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.5px;border:1px solid '+it.secBg+'">'+it.secLabel+'</td></tr>';}
@@ -4279,7 +4243,7 @@ function lcGenerarPDF(){
     +'<div style="font-size:11px;color:#555">Tel: +51 943 435 224 · adm@tycsmg.com · www.tycsmg.com</div></div></div>'
     +'<div style="text-align:right;font-size:11px;color:#555;line-height:1.9"><div style="font-size:15px;font-weight:800;color:#375623">'+cotNum+'</div>'
     +'<div>Fecha: <strong>'+fechaFmt+'</strong></div>'
-    +'<div>Total ítems: <strong>'+listaCompraItems.length+'</strong></div></div></div>'
+    +'<div>Total ítems: <strong>'+_lcItems.length+'</strong></div></div></div>'
     +'<div class="dt">🛒 Lista de Materiales para Compra</div>'
     +'<div class="ds">Cotización N° '+cotNum+' · '+fechaFmt+'</div>'
     +'<div class="datos"><div class="dato"><div class="dl">Cliente</div><div class="dv">'+cliente+'</div></div>'
@@ -4302,9 +4266,8 @@ function lcGenerarPDF(){
     +'<div style="font-size:11px;color:#555">Firma / Nombre / Fecha</div></div></div>'
     +'</body></html>');
   win.document.close();
-  closeModal('modal-lista-compra');
+  closeModal('modal-lista-mat');
 }
-
 
 
 function toggleListaCompraMenu(){
@@ -4324,7 +4287,6 @@ function toggleListaCompraMenu(){
     }, 10);
   }
 }
-
 
 // ─── SOLICITUD DE COTIZACIÓN A PROVEEDOR ────────────────────────────────────
 var solicitudItems = [];
