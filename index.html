@@ -604,7 +604,7 @@ textarea.form-control:focus{border-color:var(--accent2);box-shadow:0 0 0 3px rgb
             </div>
             <div class="client-field">
               <span class="client-label">N° Cotización</span>
-              <input type="text" class="form-control" id="cot-num" placeholder="COT-001-2026" style="background:var(--yellow)">
+              <input type="text" class="form-control" id="cot-num" placeholder="COT-001-2026" style="background:var(--yellow)" oninput="this.dataset.manual='1'">
             </div>
             <div class="client-field">
               <span class="client-label">Fecha emisión</span>
@@ -2900,11 +2900,13 @@ function recalcTotals(){
 
 function generarNroCot(){
   try{
-    const hist=JSON.parse(localStorage.getItem('tyc_historico')||'[]');
-    const yr=new Date().getFullYear();
-    const seq=String(hist.length+1).padStart(3,'0');
+    const hist = JSON.parse(localStorage.getItem('tyc_historico')||'[]');
+    const yr   = new Date().getFullYear();
+    // Count only this year's entries for the sequence
+    const thisYr = hist.filter(function(h){ return String(h.fecha||'').slice(0,4)===String(yr); });
+    const seq  = String(thisYr.length + 1).padStart(3,'0');
     return 'COT-'+seq+'-'+yr;
-  }catch(e){ return 'COT-001-'+new Date().getFullYear(); }
+  } catch(e){ return 'COT-001-'+new Date().getFullYear(); }
 }
 
 function limpiarCotizacion(){
@@ -2912,11 +2914,12 @@ function limpiarCotizacion(){
   COT_SECTIONS.forEach(s=>s.items=[]);
   ['cot-cliente','cot-ruc','cot-contacto','cot-lugar','cot-desc'].forEach(id=>{
     const el=document.getElementById(id);
-  document.getElementById('cot-num').value = generarNroCot(); if(el) el.value='';
+    if(el) el.value='';
   });
+  document.getElementById('cot-num').value = generarNroCot();
   const fd=document.getElementById('cot-fecha'); if(fd) fd.value=new Date().toISOString().slice(0,10);
   renderCotizacion();
-  showNotif('Cotización limpiada');
+  showNotif('Cotización limpiada — Nro asignado: '+document.getElementById('cot-num').value);
 }
 
 function updatePreviewMeta(){}
@@ -6893,6 +6896,9 @@ function autoHeight(el){
 
 // Init
 document.addEventListener('DOMContentLoaded', ()=>{
+  // Auto-assign Nro Cotización
+  const cotEl = document.getElementById('cot-num');
+  if(cotEl && !cotEl.value) cotEl.value = generarNroCot();
   // Set nav logo
   const navLogo = document.getElementById('nav-logo-img');
   if(navLogo && typeof TYC_LOGO !== 'undefined') navLogo.src = TYC_LOGO;
