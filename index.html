@@ -2898,11 +2898,21 @@ function recalcTotals(){
   recalcDescuento();
 }
 
+function generarNroCot(){
+  try{
+    const hist=JSON.parse(localStorage.getItem('tyc_historico')||'[]');
+    const yr=new Date().getFullYear();
+    const seq=String(hist.length+1).padStart(3,'0');
+    return 'COT-'+seq+'-'+yr;
+  }catch(e){ return 'COT-001-'+new Date().getFullYear(); }
+}
+
 function limpiarCotizacion(){
   if(!confirm('¿Limpiar toda la cotización actual?')) return;
   COT_SECTIONS.forEach(s=>s.items=[]);
-  ['cot-cliente','cot-ruc','cot-contacto','cot-num','cot-lugar','cot-desc'].forEach(id=>{
-    const el=document.getElementById(id); if(el) el.value='';
+  ['cot-cliente','cot-ruc','cot-contacto','cot-lugar','cot-desc'].forEach(id=>{
+    const el=document.getElementById(id);
+  document.getElementById('cot-num').value = generarNroCot(); if(el) el.value='';
   });
   const fd=document.getElementById('cot-fecha'); if(fd) fd.value=new Date().toISOString().slice(0,10);
   renderCotizacion();
@@ -3473,20 +3483,15 @@ function renderPreview(){
         ${vtProblema?('<div class="print-section" style="border-left-color:var(--red)"><div class="print-section-title" style="color:var(--red)">Problema / Hallazgo</div><div style="font-size:12px">'+vtProblema+'</div></div>'):''}
         ${vtTrabajos?('<div class="print-section" style="border-left-color:var(--green)"><div class="print-section-title" style="color:var(--green)">Trabajos realizados / Solución</div><div style="font-size:12px">'+vtTrabajos+'</div></div>'):''}
         ${vtObsRel?('<div class="print-section"><div class="print-section-title">Observaciones adicionales</div><div style="font-size:12px">'+vtObsRel+'</div></div>'):''}
-        ${vtFotos.length?`
-        <div>
-          <div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Registro fotográfico (${vtFotos.length} foto${vtFotos.length!==1?'s':''})</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">
-            ${vtFotos.map((f,i)=>`
-              <div style="border:1px solid var(--border2);border-radius:8px;overflow:hidden">
-                <img src="${f.dataUrl}" alt="Foto ${i+1}" style="width:100%;height:140px;object-fit:cover;display:block">
-                <div style="padding:6px 8px;background:var(--surface2)">
-                  <div style="font-size:10px;color:var(--text3)">Foto ${i+1}</div>
-                  ${f.caption?('<div style="font-size:11px;color:var(--text)">'+f.caption+'</div>'):''}
-                </div>
-              </div>`).join('')}
-          </div>
-        </div>`:''}
+        ${vtFotos.length?('<div>'+
+        '<div style="font-size:11px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">Registro fotográfico ('+vtFotos.length+' foto'+(vtFotos.length!==1?'s':'')+')'+
+        '</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">'+
+        vtFotos.map(function(f,i){ return '<div style="border:1px solid var(--border2);border-radius:8px;overflow:hidden">'+
+          '<img src="'+f.dataUrl+'" alt="Foto '+(i+1)+'" style="width:100%;height:140px;object-fit:cover;display:block">'+
+          '<div style="padding:6px 8px;background:var(--surface2)"><div style="font-size:10px;color:var(--text3)">Foto '+(i+1)+'</div>'+
+          (f.caption?'<div style="font-size:11px;color:var(--text)">'+f.caption+'</div>':'')+
+          '</div></div>'; }).join('')+
+        '</div></div>'):''}
       </div>
     </div>` : '';
 
@@ -3539,11 +3544,7 @@ function renderPreview(){
       </div>
     </div>
 
-    ${allRows ? `
-    <table class="print-table">
-      <thead><tr><th>Descripción</th><th>Especificación</th><th>Und.</th><th>Cant.</th><th>P. Venta S/</th><th>Subtotal S/</th></tr></thead>
-      <tbody>${allRows}</tbody>
-    </table>` : '<div class="empty-state" style="padding:24px;text-align:center;color:var(--text3)">No hay ítems en la cotización</div>'}
+    ${allRows ? '<table class="print-table"><thead><tr><th>Descripción</th><th>Especificación</th><th>Und.</th><th>Cant.</th><th>P. Venta S/</th><th>Subtotal S/</th></tr></thead><tbody>'+allRows+'</tbody></table>' : '<div class="empty-state" style="padding:24px;text-align:center;color:var(--text3)">No hay ítems en la cotización</div>'}
 
     <div class="print-total-block">
       <div class="print-totals">
@@ -3559,7 +3560,7 @@ function renderPreview(){
         ${descPct>0?('<div class="print-total-row" style="background:#FFFBEA"><span style="color:#854F0B">Descuento aplicado ('+descPct+'%)</span><span class="pval" style="color:#854F0B">− S/ '+fmtN(grandVenta*1.18*(descPct/100))+'</span></div><div class="print-total-row final" style="background:#F0FFF4;border:2px solid #375623"><span style="color:#375623;font-size:14px">PRECIO AL CLIENTE</span><span class="pval" style="color:#375623;font-size:18px">S/ '+fmtN(grandVenta*1.18*(1-descPct/100))+'</span></div>'):('<div class="print-total-row final"><span>TOTAL AL CLIENTE</span><span class="pval">S/ '+fmtN(grandVenta*1.18)+'</span></div>')}
       </div>
     </div>
-    ${segOnly>0?('<div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px"><div style="background:#FFF8F0;border:2px solid #C9A227;border-radius:10px;padding:14px;text-align:center"><div style="font-size:10px;font-weight:600;color:#854F0B;text-transform:uppercase;margin-bottom:6px">⊘ Sin Personal Seguridad/HSE</div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:14px;font-weight:600;color:#854F0B;margin-bottom:2px">'+fmtN(totalSinSeg*1.18)+'</div><div style="font-size:10px;color:var(--text3)">c/ IGV · sin Seguridad/HSE</div></div><div style="background:#FEF0F0;border:2px solid #A32D2D;border-radius:10px;padding:14px;text-align:center"><div style="font-size:10px;font-weight:600;color:#A32D2D;text-transform:uppercase;margin-bottom:6px">🛡 Con Personal Seguridad/HSE</div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:14px;font-weight:600;color:#A32D2D;margin-bottom:2px">'+fmtN(grandVenta*1.18)+'</div><div style="font-size:10px;color:var(--text3)">c/ IGV · incluye Seguridad/HSE</div></div></div>'):''}
+    ${segOnly>0?('<div style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:10px"><div style="background:#FFF8F0;border:2px solid #C9A227;border-radius:10px;padding:14px;text-align:center"><div style="font-size:10px;font-weight:600;color:#854F0B;text-transform:uppercase;margin-bottom:6px">⊘ Sin Seguridad/HSE</div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:14px;font-weight:600;color:#854F0B;margin-bottom:2px">'+fmtN(totalSinSeg*1.18)+'</div><div style="font-size:10px;color:var(--text3)">c/IGV sin HSE</div></div><div style="background:#FEF0F0;border:2px solid #A32D2D;border-radius:10px;padding:14px;text-align:center"><div style="font-size:10px;font-weight:600;color:#A32D2D;text-transform:uppercase;margin-bottom:6px">🛡 Con Seguridad/HSE</div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:14px;font-weight:600;color:#A32D2D;margin-bottom:2px">'+fmtN(grandVenta*1.18)+'</div><div style="font-size:10px;color:var(--text3)">c/IGV con HSE</div></div></div>'):''}
 
     <div style="margin-top:20px;padding:12px 16px;background:var(--surface2);border-radius:8px;font-size:11px;color:var(--text3)">
       <strong style="color:var(--text2)">Condiciones generales:</strong>
@@ -5288,13 +5289,6 @@ async function cargarHistorialDrive(){
   });
 }
 
-function generarNroCot(){
-  const year = new Date().getFullYear();
-  const existing = historicoCot.filter(c => c.num && c.num.includes(String(year)));
-  const next = existing.length + 1;
-  return `COT-${String(next).padStart(3,'0')}-${year}`;
-}
-
 function guardarEnHistorico(){
   // Collect current cotización data
   const num    = document.getElementById('cot-num').value.trim() || generarNroCot();
@@ -5800,14 +5794,8 @@ function renderMatControl(){
         <span style="font-size:12px;font-weight:500;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.desc}</span>
         <span style="font-size:11px;color:var(--text2);white-space:nowrap">${m.qty} ${m.unit}</span>
       </div>
-      ${m.estado==='comprado'?`
-      <div style="display:flex;align-items:center;gap:8px">
-        <label style="font-size:10px;color:var(--text2)">Precio real S/:</label>
-        <input type="number" value="${m.precioReal||''}" min="0" step="0.01" placeholder="0.00"
-          style="width:80px;padding:3px 7px;border:1px solid var(--border);border-radius:4px;font-size:11px;background:var(--yellow)"
-          oninput="actualizarPrecioMat(${i},this.value)">
-        <span style="font-size:10px;color:var(--text3)">Cot: S/ ${fmtN(m.costoCot)}</span>
-      </div>`:''}
+      ${m.estado==='comprado'?('<div style="display:flex;align-items:center;gap:8px"><label style="font-size:10px;color:var(--text2)">Precio real S/:</label><input type="number" value="'+(m.precioReal||'')+'" min="0" step="0.01" placeholder="0.00" style="width:80px;padding:3px 7px;border:1px solid var(--border);border-radius:4px;font-size:11px;background:var(--yellow);" oninput="actualizarPrecioMat('+i+',this.value)"><span style="font-size:10px;color:var(--text3)">Cot: S/ '+fmtN(m.costoCot)+'</span></div>'):''}
+
       ${m.seccion?('<div style="font-size:10px;color:var(--text3);margin-top:2px">'+m.seccion+'</div>'):''}
     </div>`;
   }).join('');
@@ -5848,12 +5836,12 @@ function renderGastos(){
     lista.innerHTML='<div style="text-align:center;padding:16px;color:var(--text3);font-size:12px;font-style:italic">Sin gastos adicionales</div>';
     return;
   }
-  lista.innerHTML = proy.gastosExtra.map((g,i)=>`
+  lista.innerHTML = proy.gastosExtra.map(function(g,i){ return `
     <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;background:var(--surface2);border:1px solid var(--border2)">
       <div style="flex:1"><div style="font-size:12px;font-weight:500">${g.desc}</div><div style="font-size:10px;color:var(--text3)">${g.fecha}</div></div>
       <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:var(--green)">S/ ${fmtN(g.monto)}</span>
       <button onclick="eliminarGasto(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:11px">✕</button>
-    </div>`).join('');
+    </div>`; }).join('');
 }
 
 function eliminarGasto(i){
