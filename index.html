@@ -2672,6 +2672,8 @@ function renderCotizacion(){
   container.innerHTML = COT_SECTIONS.map((sec,si)=>{
     if(!sec.items.length) return '';
     const prodOpts = buildOpts(si);
+    const secColors = ['#1F3864','#854F0B','#375623','#634B09','#555555','#A32D2D'];
+    const secColor  = secColors[si]||'var(--accent)';
     const rows = sec.items.map((item,ii)=>{
       const m = item.margin !== null ? item.margin : margin;
       const venta = item.costo*(1+m);
@@ -2680,18 +2682,18 @@ function renderCotizacion(){
         `value="${item._pi}"`,
         `value="${item._pi}" selected`
       );
-      // Move buttons — only show for all sections for ordering
-      const canMoveUp   = ii > 0;
-      const canMoveDown = ii < sec.items.length - 1;
-      const moveButtons = `
-        <div style="display:flex;flex-direction:column;gap:1px">
-          <button title="Subir" onclick="moveCotItem(${si},${ii},-1)"
-            style="background:${canMoveUp?secColor:'#ddd'};color:#fff;border:none;border-radius:3px;width:20px;height:17px;cursor:${canMoveUp?'pointer':'default'};font-size:10px;padding:0;line-height:1;display:flex;align-items:center;justify-content:center"
-            ${canMoveUp?'':'disabled'}>↑</button>
-          <button title="Bajar" onclick="moveCotItem(${si},${ii},1)"
-            style="background:${canMoveDown?secColor:'#ddd'};color:#fff;border:none;border-radius:3px;width:20px;height:17px;cursor:${canMoveDown?'pointer':'default'};font-size:10px;padding:0;line-height:1;display:flex;align-items:center;justify-content:center"
-            ${canMoveDown?'':'disabled'}>↓</button>
-        </div>`;
+      // Move buttons — string concat (no nested backticks)
+      const upBg   = ii > 0 ? secColor : '#ddd';
+      const downBg = ii < sec.items.length-1 ? secColor : '#ddd';
+      const upDis  = ii > 0 ? '' : 'disabled';
+      const downDis= ii < sec.items.length-1 ? '' : 'disabled';
+      const moveButtons =
+        '<div style="display:flex;flex-direction:column;gap:1px">'
+        +'<button title="Subir" onclick="moveCotItem('+si+','+ii+',-1)" '+upDis
+        +' style="background:'+upBg+';color:#fff;border:none;border-radius:3px;width:20px;height:17px;cursor:'+(ii>0?'pointer':'default')+';font-size:10px;padding:0;line-height:1;display:flex;align-items:center;justify-content:center">↑</button>'
+        +'<button title="Bajar" onclick="moveCotItem('+si+','+ii+',1)" '+downDis
+        +' style="background:'+downBg+';color:#fff;border:none;border-radius:3px;width:20px;height:17px;cursor:'+(ii<sec.items.length-1?'pointer':'default')+';font-size:10px;padding:0;line-height:1;display:flex;align-items:center;justify-content:center">↓</button>'
+        +'</div>';
       return `<tr>
         <td style="text-align:center;padding:4px 6px;color:#888;font-size:11px;font-weight:600;background:#f8f9fa;min-width:28px;border-right:1px solid var(--border2)">${ii+1}</td>
         <td style="text-align:center;padding:3px 4px;min-width:28px">${moveButtons}</td>
@@ -2731,9 +2733,6 @@ function renderCotizacion(){
       const m = item.margin!==null?item.margin:margin;
       return a+item.qty*item.costo*(1+m);
     },0);
-    const secColors = ['#1F3864','#854F0B','#375623','#634B09','#555555','#A32D2D'];
-    const secColor  = secColors[si]||'var(--accent)';
-
     // ── Sección 0 (Mano de Obra): banner con resumen de trabajadores ──────
     let moBanner = '';
     if(si === 0){
